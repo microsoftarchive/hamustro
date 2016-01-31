@@ -1,0 +1,24 @@
+{
+  "dialect": "aqs|abs|sns",
+  "max_worker_size": 8,
+  "max_queue_size": 100,
+  "buffer_size": 10000,
+  "shared_secret": "randomsecret",
+  "aqs": {
+    "account": "",
+    "access_key": "",
+    "queue_name": "name of the queue"
+  },
+  "abs": {
+    "account": "",
+    "access_key": "",
+    "container": "name of the container",
+    "blob_path": "path/to/dir/"
+  },
+  "sns": {
+    "region": "",
+    "access_key_id": "",
+    "secret_access_key": "",
+    "topic_arn": "sns:..."
+  }
+}
