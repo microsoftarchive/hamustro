@@ -22,3 +22,9 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+config/*
+profile/*
+tests/*
+*.pb.go
+tivan
