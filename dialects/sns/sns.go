@@ -52,10 +52,8 @@ func (c *SNSStorage) IsBufferedStorage() bool {
 // Publish a single Event to SNS topic.
 func (c *SNSStorage) Save(msg *string) error {
 	params := &sns.PublishInput{
-		Message:           msg,
-		MessageStructure:  aws.String("json"),
-		MessageAttributes: map[string]*sns.MessageAttributeValue{"Key": {DataType: aws.String("String")}},
-		TopicArn:          &c.TopicArn}
+		Message:  msg,
+		TopicArn: &c.TopicArn}
 	_, err := c.Client.Publish(params)
 	if err != nil {
 		return err
