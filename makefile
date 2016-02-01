@@ -1,13 +1,13 @@
-ifndef THOST
-  THOST:=$(warning Please define THOST environment variable, using default "http://localhost")http://localhost
+ifndef TAVIS_HOST
+  TAVIS_HOST:=$(warning Please define TAVIS_HOST environment variable, using default "localhost")localhost
 endif
 
-ifndef TPORT
-  TPORT:=$(warning Please define TPORT environment variable, using "8080")8080
+ifndef TAVIS_PORT
+  TAVIS_PORT:=$(warning Please define TAVIS_PORT environment variable, using "8080")8080
 endif
 
-ifndef TCONFIG
-  TCONFIG:=$(warning Please define TCONFIG environment variable, using "config/config.json.sample")config/config.json.sample
+ifndef TAVIS_CONFIG
+  TAVIS_CONFIG:=$(warning Please define TAVIS_CONFIG environment variable, using "config/config.json.sample")config/config.json.sample
 endif
 
 all:
@@ -24,22 +24,22 @@ build:
 	go build -o tivan
 
 run: build
-	./tivan -config $(TCONFIG) -verbose
+	./tivan -config $(TAVIS_CONFIG) -verbose
 
 profile/:
 	mkdir -p $@
 
 profile/cpu: profile/
-	go tool pprof --pdf tivan $(THOST):$(TPORT)/debug/pprof/profile > $@.pdf
+	go tool pprof --pdf tivan $(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/profile > $@.pdf
 
 profile/goroutine: profile/
-	go tool pprof --pdf tivan $(THOST):$(TPORT)/debug/pprof/goroutine > $@.pdf
+	go tool pprof --pdf tivan $(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/goroutine > $@.pdf
 
 profile/heap: profile/
-	go tool pprof --pdf tivan $(THOST):$(TPORT)/debug/pprof/heap > $@.pdf
+	go tool pprof --pdf tivan $(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/heap > $@.pdf
 
 tests/stress/single:
-	wrk -t5 -c10 -d60s -s tests/stress-test/single.lua "$(THOST):$(TPORT)/api/v1/track"
+	wrk -t5 -c10 -d60s -s tests/stress-test/single.lua "$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
 
 tests/stress/multi:
-	wrk -t5 -c10 -d1m -s tests/stress-test/multi.lua "$(THOST):$(TPORT)/api/v1/track"
+	wrk -t5 -c10 -d1m -s tests/stress-test/multi.lua "$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"

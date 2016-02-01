@@ -262,6 +262,8 @@ var storageClient dialects.StorageClient
 
 // Application configuration
 type Config struct {
+	Host          string     `json:"host"`
+	Port          string     `json:"port"`
 	Dialect       string     `json:"dialect"`
 	MaxWorkerSize int        `json:"max_worker_size"`
 	MaxQueueSize  int        `json:"max_queue_size"`
@@ -272,6 +274,7 @@ type Config struct {
 	ABS           abs.Config `json:"abs"`
 }
 
+// Creates a new configuration object
 func NewConfig(filename string) *Config {
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -284,8 +287,9 @@ func NewConfig(filename string) *Config {
 	return &config
 }
 
+// Returns the maximum worker size
 func (c *Config) GetMaxWorkerSize() int {
-	size, _ := strconv.ParseInt(os.Getenv("TANELEER_MAX_WORKER_SIZE"), 10, 0)
+	size, _ := strconv.ParseInt(os.Getenv("TAVIS_MAX_WORKER_SIZE"), 10, 0)
 	if size != 0 {
 		return int(size)
 	}
@@ -295,8 +299,9 @@ func (c *Config) GetMaxWorkerSize() int {
 	return 5
 }
 
+// Returns the maximum queue size
 func (c *Config) GetMaxQueueSize() int {
-	size, _ := strconv.ParseInt(os.Getenv("TANELEER_MAX_QUEUE_SIZE"), 10, 0)
+	size, _ := strconv.ParseInt(os.Getenv("TAVIS_MAX_QUEUE_SIZE"), 10, 0)
 	if size != 0 {
 		return int(size)
 	}
@@ -304,6 +309,27 @@ func (c *Config) GetMaxQueueSize() int {
 		return c.MaxQueueSize
 	}
 	return 100
+}
+
+// Returns the port of the application
+func (c *Config) GetPort() string {
+	if port := os.Getenv("TAVIS_PORT"); port != "" {
+		return port
+	}
+	return "8080"
+}
+
+// Returns the host of the application
+func (c *Config) GetHost() string {
+	if port := os.Getenv("TAVIS_HOST"); port != "" {
+		return port
+	}
+	return "localhost"
+}
+
+// Returns the address of the application
+func (c *Config) GetAddress() string {
+	return c.GetHost() + ":" + c.GetPort()
 }
 
 func (c *Config) DialectConfig() (dialects.Dialect, error) {
@@ -349,6 +375,7 @@ func init() {
 }
 
 func main() {
+	log.Printf("Starting server at %s", config.GetAddress())
 	http.HandleFunc("/api/v1/track", TrackHandler)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(config.GetAddress(), nil)
 }
