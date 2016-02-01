@@ -3,7 +3,7 @@
   "max_worker_size": 8,
   "max_queue_size": 100,
   "buffer_size": 10000,
-  "shared_secret": "randomsecret",
+  "shared_secret": "ultrasafesecret",
   "aqs": {
     "account": "",
     "access_key": "",

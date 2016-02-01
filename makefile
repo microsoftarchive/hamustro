@@ -1,5 +1,9 @@
+ifndef TAVIS_SCHEMA
+  TAVIS_SCHEMA:=http://
+endif
+
 ifndef TAVIS_HOST
-  TAVIS_HOST:=$(warning Please define TAVIS_HOST environment variable, using default "localhost")localhost
+  TAVIS_HOST:=$(warning Please define TAVIS_HOST environment variable, using default localhost")localhost
 endif
 
 ifndef TAVIS_PORT
@@ -30,16 +34,18 @@ profile/:
 	mkdir -p $@
 
 profile/cpu: profile/
-	go tool pprof --pdf tivan $(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/profile > $@.pdf
+	go tool pprof --pdf tivan $(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/profile > $@.pdf
 
 profile/goroutine: profile/
-	go tool pprof --pdf tivan $(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/goroutine > $@.pdf
+	go tool pprof --pdf tivan $(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/goroutine > $@.pdf
 
 profile/heap: profile/
-	go tool pprof --pdf tivan $(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/heap > $@.pdf
+	go tool pprof --pdf tivan $(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/heap > $@.pdf
 
-tests/stress/single:
-	wrk -t5 -c10 -d60s -s tests/stress-test/single.lua "$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
+tests/stress/1:
+	cd tests/stress/1-message && \
+		wrk -t5 -c10 -d1m -s ../run.lua "$(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
 
-tests/stress/multi:
-	wrk -t5 -c10 -d1m -s tests/stress-test/multi.lua "$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
+tests/stress/n:
+	cd tests/stress/n-messages && \
+		wrk -t5 -c10 -d1m -s ../run.lua "$(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
