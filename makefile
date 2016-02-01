@@ -40,6 +40,9 @@ profile/goroutine: profile/
 profile/heap: profile/
 	go tool pprof --pdf tivan $(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/heap > $@.pdf
 
+tests/send:
+	python utils/send_single_message.py $(TAVIS_CONFIG) "$(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
+
 tests/stress/1-messages/:
 	python utils/generate_stress_messages.py $(TAVIS_CONFIG) $@
 

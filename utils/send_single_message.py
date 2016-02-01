@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     msg = Message(random_payload=False)
     msg.time = datetime.datetime.utcnow().isoformat()
-    resp = requests.post(os.path.join(args.URL, 'api/v1/track'), headers={
+    resp = requests.post(args.URL, headers={
         'X-Tivan-Time': msg.time,
         'X-Tivan-Signature': msg.signature(shared_secret)
     }, data=msg.body)
