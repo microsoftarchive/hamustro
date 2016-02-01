@@ -8,6 +8,7 @@ class Message(object):
     def __init__(self, random_payload=True):
         self.random_payload = random_payload
         self.collection = self.set_collection()
+        self.time = datetime.datetime(2016,1,1).isoformat()
 
     def get_payload(self):
         p = Payload()
@@ -39,10 +40,6 @@ class Message(object):
     @property
     def body(self):
         return self.collection.SerializeToString()
-
-    @property
-    def time(self):
-        return datetime.datetime(2016,1,1).isoformat()
 
     def signature(self, shared_secret):
         return hashlib.md5("{time}|{md5body}|{shared_secret}" \

@@ -17,11 +17,8 @@ endif
 all:
 	@echo "Please specify a target!"
 
-install/linux:
-	install.sh linux
-
-install/darwin:
-	install.sh darwin
+install/%:
+	./install.sh $*
 
 build:
 	protoc --go_out=. payload/*.proto
@@ -43,14 +40,11 @@ profile/goroutine: profile/
 profile/heap: profile/
 	go tool pprof --pdf tivan $(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/heap > $@.pdf
 
-tests/stress/1-message/:
+tests/stress/1-messages/:
 	python utils/generate_stress_messages.py $(TAVIS_CONFIG) $@
 
 tests/stress/n-messages/:
-	python utils/generate_stress_messages.py $(TAVIS_CONFIG) $@
+	python utils/generate_stress_messages.py -r $(TAVIS_CONFIG) $@
 
-tests/stress/1: tests/stress/1-message/
-	cd $< && wrk -t5 -c10 -d1m -s ../run.lua "$(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
-
-tests/stress/n: tests/stress/n-messages/
+tests/stress/%: tests/stress/%-messages/
 	cd $< && wrk -t5 -c10 -d1m -s ../run.lua "$(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
