@@ -4,7 +4,7 @@
 
 ## Overview
 
-This collector meant to be a highly available RESTful web service that receives events from client devices and secures them agnostic of cloud targets.
+This collector meant to be a highly available [RESTful web service](https://github.com/sub-ninja/tivan/blob/master/main.go#L200) that receives events from client devices and secures them agnostic of cloud targets.
 
 The collector is implemented in Go, runs on Ubuntu and OSX.
 
