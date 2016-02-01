@@ -39,3 +39,6 @@ go get -u github.com/golang/protobuf/proto
 go get -u github.com/go-ini/ini
 go get -u github.com/jmespath/go-jmespath
 go get -u github.com/golang/protobuf/protoc-gen-go
+
+# Install python packages for utils
+pip install protobuf

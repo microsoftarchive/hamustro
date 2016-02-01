@@ -1,7 +1,0 @@
-
-#bences-mbp.guest.corp.microsoft.com 06af2e43797e629c5a4c7bfe58a105c3 393c26cf0bd9cac801d4c82641053fe4"_Darwin Kernel Version 14.5.0: Tue Jan 26 12:42:19 CET 2016; root:xnu-2782.40.9~1/RELEASE_X86_64*2.7.102Darwin-14.5.0-x86_64-i386-64bitB3
-2016-01-29T14:38:46.167540Backend.74604¾ Ÿ8B2
-2016-01-29T14:38:46.167623Backend.50632| Õ78B3
-2016-01-29T14:38:46.167678Backend.76119€ ÿ8B3
-2016-01-29T14:38:46.167733Backend.17661€ Í8B3
-2016-01-29T14:38:46.167784Backend.45126­ Õ8

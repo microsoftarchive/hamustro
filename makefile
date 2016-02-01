@@ -25,6 +25,7 @@ install/darwin:
 
 build:
 	protoc --go_out=. payload/*.proto
+	protoc --python_out=utils payload/*.proto
 	go build -o tivan
 
 run: build
@@ -42,10 +43,14 @@ profile/goroutine: profile/
 profile/heap: profile/
 	go tool pprof --pdf tivan $(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/debug/pprof/heap > $@.pdf
 
-tests/stress/1:
-	cd tests/stress/1-message && \
-		wrk -t5 -c10 -d1m -s ../run.lua "$(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
+tests/stress/1-message/:
+	python utils/generate_stress_messages.py $(TAVIS_CONFIG) $@
 
-tests/stress/n:
-	cd tests/stress/n-messages && \
-		wrk -t5 -c10 -d1m -s ../run.lua "$(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
+tests/stress/n-messages/:
+	python utils/generate_stress_messages.py $(TAVIS_CONFIG) $@
+
+tests/stress/1: tests/stress/1-message/
+	cd $< && wrk -t5 -c10 -d1m -s ../run.lua "$(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
+
+tests/stress/n: tests/stress/n-messages/
+	cd $< && wrk -t5 -c10 -d1m -s ../run.lua "$(TAVIS_SCHEMA)$(TAVIS_HOST):$(TAVIS_PORT)/api/v1/track"
