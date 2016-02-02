@@ -93,11 +93,11 @@ The collector only accepts `POST` with a body of a valid Protobuf bytestream.
 
 Please wait for `200` response code before you delete the already sent payloads. After that update the last sync time. Do not remove the events receiving a different error code.
 
-At the moment I don't have any information on the headers. Please define the following:
+Please define the following headers for sending:
 
 ```
-X-Tivan-Time: isoformat UTC timestamp without timezone
-X-Tivan-Signature: md5(X-Time + "|" + md5(request.body) + "|" + t.shared_secret_key)
+X-Hamustro-Time: isoformat UTC timestamp without timezone
+X-Hamustro-Signature: md5(X-Time + "|" + md5(request.body) + "|" + t.shared_secret_key)
 ```
 
 Send this information to `/api/v1/track`.

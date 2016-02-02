@@ -210,19 +210,19 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If the client did not send time, we ignore
-	if r.Header.Get("X-Tivan-Time") == "" {
+	if r.Header.Get("X-Hamustro-Time") == "" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		if verbose {
-			log.Println("request was dropped: `X-Tivan-Time` header is missing")
+			log.Println("request was dropped: `X-Hamustro-Time` header is missing")
 		}
 		return
 	}
 
 	// If the client did not send signature of the message, we ignore
-	if r.Header.Get("X-Tivan-Signature") == "" {
+	if r.Header.Get("X-Hamustro-Signature") == "" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		if verbose {
-			log.Println("request was dropped: `X-Tivan-Signature` header is missing")
+			log.Println("request was dropped: `X-Hamustro-Signature` header is missing")
 		}
 		return
 	}
@@ -231,10 +231,10 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 
 	// Calculate the request's signature
-	if r.Header.Get("X-Tivan-Signature") != GetSignature(body, r.Header.Get("X-Tivan-Time")) {
+	if r.Header.Get("X-Hamustro-Signature") != GetSignature(body, r.Header.Get("X-Hamustro-Time")) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		if verbose {
-			log.Println("request was dropped: `X-Tivan-Signature` is not valid")
+			log.Println("request was dropped: `X-Hamustro-Signature` is not valid")
 		}
 		return
 	}
@@ -291,7 +291,7 @@ func NewConfig(filename string) *Config {
 
 // Returns the maximum worker size
 func (c *Config) GetMaxWorkerSize() int {
-	size, _ := strconv.ParseInt(os.Getenv("TAVIS_MAX_WORKER_SIZE"), 10, 0)
+	size, _ := strconv.ParseInt(os.Getenv("HAMUSTRO_MAX_WORKER_SIZE"), 10, 0)
 	if size != 0 {
 		return int(size)
 	}
@@ -303,7 +303,7 @@ func (c *Config) GetMaxWorkerSize() int {
 
 // Returns the maximum queue size
 func (c *Config) GetMaxQueueSize() int {
-	size, _ := strconv.ParseInt(os.Getenv("TAVIS_MAX_QUEUE_SIZE"), 10, 0)
+	size, _ := strconv.ParseInt(os.Getenv("HAMUSTRO_MAX_QUEUE_SIZE"), 10, 0)
 	if size != 0 {
 		return int(size)
 	}
@@ -315,7 +315,7 @@ func (c *Config) GetMaxQueueSize() int {
 
 // Returns the port of the application
 func (c *Config) GetPort() string {
-	if port := os.Getenv("TAVIS_PORT"); port != "" {
+	if port := os.Getenv("HAMUSTRO_PORT"); port != "" {
 		return port
 	}
 	return "8080"
@@ -323,7 +323,7 @@ func (c *Config) GetPort() string {
 
 // Returns the host of the application
 func (c *Config) GetHost() string {
-	if port := os.Getenv("TAVIS_HOST"); port != "" {
+	if port := os.Getenv("HAMUSTRO_HOST"); port != "" {
 		return port
 	}
 	return "localhost"

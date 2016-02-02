@@ -1,6 +1,6 @@
-# Tivan - the collector of events
+# Hamustro - the collector of events
 
-![](docs/tivan.jpg)
+![](http://i.giphy.com/GnCc88zZhSVUc.gif)
 
 ## Overview
 
@@ -12,10 +12,10 @@ Events are sent in [Protobuf](https://github.com/sub-ninja/tivan/blob/master/pay
 
 Currently supported cloud targets are (tested throughput on a c3.xlarge computer with 4vCPU in AWS):
 
-* Amazon Web Services Simple Notification Service (up to 59k events/minute, 70 multi payload requests/s),
-* Amazon Web Services Simple Storage Service,
-* Microsoft Azure Blob Storage (up to 2.6M events/minute, 3k multi payload requests/s),
-* Microsoft Azure Queue Storage (up to 5k events/minute, 5 multi payload requests/s).
+* __Amazon Web Services Simple Notification Service__: 59k events/minute, 70 multi payload requests/s
+* __Amazon Web Services Simple Storage Service__: 2.3M events/minute, 2.8k payload requests/s
+* __Microsoft Azure Blob Storage__: 2.6M events/minute, 3k multi payload requests/s
+* __Microsoft Azure Queue Storage__: 5k events/minute, 5 multi payload requests/s
 
 6Wunderkinder used a similar node.js based service that secured messages in AWS SNS. Based on experiences we've rewritten the app in Go that can handle 100x more requests on equal hardware resources.
 

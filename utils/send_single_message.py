@@ -18,7 +18,7 @@ if __name__ == '__main__':
     msg = Message(random_payload=False)
     msg.time = datetime.datetime.utcnow().isoformat()
     resp = requests.post(args.URL, headers={
-        'X-Tivan-Time': msg.time,
-        'X-Tivan-Signature': msg.signature(shared_secret)
+        'X-Hamustro-Time': msg.time,
+        'X-Hamustro-Signature': msg.signature(shared_secret)
     }, data=msg.body)
     print('Response code: {}'.format(resp.status_code))

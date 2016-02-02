@@ -30,7 +30,7 @@ request = function()
 	body = bodies[idx]
 	headers = {}
 	headers["Content-Type"] = "application/x-google-protobuf"
-	headers["X-Tivan-Time"] = "2016-01-01T00:00:00"
-	headers["X-Tivan-Signature"] = signatures[idx]
+	headers["X-Hamustro-Time"] = "2016-01-01T00:00:00"
+	headers["X-Hamustro-Signature"] = signatures[idx]
 	return wrk.format(METHOD, wrk.url, headers, bodies[idx])
 end

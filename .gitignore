@@ -27,5 +27,6 @@ config/*
 profile/*
 tests/*
 *.pb.go
-tivan
+*_pb2.py
+hamustro
 *.pyc
