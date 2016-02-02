@@ -1,5 +1,6 @@
 {
   "dialect": "aqs|abs|sns",
+  "logfile": "",
   "max_worker_size": 8,
   "max_queue_size": 100,
   "buffer_size": 10000,

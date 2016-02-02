@@ -48,6 +48,7 @@ type Worker struct {
 	JobChannel     chan *Job
 	BufferSize     int
 	BufferedEvents []*dialects.Event
+	Penalty        float32
 	quit           chan bool
 }
 
@@ -58,6 +59,7 @@ func NewWorker(id int, bufferSize int, workerPool chan chan *Job) *Worker {
 		JobChannel:     make(chan *Job),
 		BufferSize:     bufferSize,
 		BufferedEvents: []*dialects.Event{},
+		Penalty:        1.0,
 		quit:           make(chan bool)}
 }
 
@@ -77,16 +79,17 @@ func (w *Worker) Start() {
 				}
 				if !storageClient.IsBufferedStorage() {
 					// Convert the message to JSON string
+					// TODO: Every dialect can define an output format!
 					msg, err := job.Event.GetJSONMessage()
 					if err != nil {
-						log.Printf("[%d] Encoding message to JSON is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
+						log.Printf("(%d worker) Encoding message to JSON is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
 						job.MarkAsFailed()
 						continue
 					}
 
 					// Save message immediately.
 					if err := storageClient.Save(&msg); err != nil {
-						log.Printf("[%d] Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
+						log.Printf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
 						job.MarkAsFailed()
 					}
 				} else {
@@ -94,7 +97,8 @@ func (w *Worker) Start() {
 					w.AddEventToBuffer(job.Event)
 					if w.IsBufferFull() {
 						if err := storageClient.Save(w.JoinBufferedEvents()); err != nil {
-							log.Printf("[%d] Saving buffered messages is failed: %s", w.ID, err.Error())
+							w.IncreasePenalty()
+							log.Printf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 							continue
 						}
 						w.ResetBuffer()
@@ -127,14 +131,20 @@ func (w *Worker) JoinBufferedEvents() *string {
 	return &concat
 }
 
+// Increase the value of the penalty attribute
+func (w *Worker) IncreasePenalty() {
+	w.Penalty *= 1.5
+}
+
 // Checks the state of the buffer
 func (w *Worker) IsBufferFull() bool {
-	return len(w.BufferedEvents) >= w.BufferSize
+	return len(w.BufferedEvents) >= int(float32(w.BufferSize)*w.Penalty)
 }
 
 // Resets the buffer
 func (w *Worker) ResetBuffer() {
 	w.BufferedEvents = w.BufferedEvents[:0]
+	w.Penalty = 1.0
 }
 
 // Adds a message to the buffer
@@ -204,7 +214,7 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		if verbose {
-			log.Println("request was dropped: the sending method was not POST")
+			log.Println("Request was dropped: the sending method was not POST")
 		}
 		return
 	}
@@ -213,7 +223,7 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("X-Hamustro-Time") == "" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		if verbose {
-			log.Println("request was dropped: `X-Hamustro-Time` header is missing")
+			log.Println("Request was dropped: `X-Hamustro-Time` header is missing")
 		}
 		return
 	}
@@ -222,7 +232,7 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("X-Hamustro-Signature") == "" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		if verbose {
-			log.Println("request was dropped: `X-Hamustro-Signature` header is missing")
+			log.Println("Request was dropped: `X-Hamustro-Signature` header is missing")
 		}
 		return
 	}
@@ -234,7 +244,7 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("X-Hamustro-Signature") != GetSignature(body, r.Header.Get("X-Hamustro-Time")) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		if verbose {
-			log.Println("request was dropped: `X-Hamustro-Signature` is not valid")
+			log.Println("Request was dropped: `X-Hamustro-Signature` is not valid")
 		}
 		return
 	}
@@ -242,7 +252,7 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	// Read the body into protobuf decoding.
 	collection := &payload.Collection{}
 	if err := proto.Unmarshal(body, collection); err != nil {
-		log.Printf("Protobuf unmarshal is failed: `%s", err.Error())
+		log.Printf("Protobuf unmarshal is failed: %s", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -265,6 +275,7 @@ var storageClient dialects.StorageClient
 type Config struct {
 	Host          string     `json:"host"`
 	Port          string     `json:"port"`
+	LogFile       string     `json:"logfile"`
 	Dialect       string     `json:"dialect"`
 	MaxWorkerSize int        `json:"max_worker_size"`
 	MaxQueueSize  int        `json:"max_queue_size"`
@@ -363,14 +374,14 @@ func init() {
 	config = NewConfig(*filename)
 	dialect, err := config.DialectConfig()
 	if err != nil {
-		log.Fatal("Loading dialect configuration is failed: ", err)
+		log.Fatalf("Loading dialect configuration is failed: %s", err.Error())
 	}
 	if !dialect.IsValid() {
-		log.Fatal("Dialect configuration is incorrect or incomplete: ", err)
+		log.Fatalf("Dialect configuration is incorrect or incomplete: %s", err.Error())
 	}
 	storageClient, err = dialect.NewClient()
 	if err != nil {
-		log.Fatal("Client initialization is failed: ", err)
+		log.Fatalf("Client initialization is failed: %s", err.Error())
 	}
 
 	jobQueue = make(chan *Job, config.GetMaxQueueSize())
@@ -379,6 +390,14 @@ func init() {
 }
 
 func main() {
+	if config.LogFile != "" {
+		logFile, err := os.OpenFile(config.LogFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalf("Can't open logfile %s", err.Error())
+		}
+		defer logFile.Close()
+		log.SetOutput(logFile)
+	}
 	log.Printf("Starting server at %s", config.GetAddress())
 	http.HandleFunc("/api/v1/track", TrackHandler)
 	http.ListenAndServe(config.GetAddress(), nil)
