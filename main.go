@@ -4,6 +4,7 @@ import (
 	"./dialects"
 	"./dialects/abs"
 	"./dialects/aqs"
+	"./dialects/s3"
 	"./dialects/sns"
 	"./payload"
 	"crypto/md5"
@@ -272,6 +273,7 @@ type Config struct {
 	AQS           aqs.Config `json:"aqs"`
 	SNS           sns.Config `json:"sns"`
 	ABS           abs.Config `json:"abs"`
+	S3            s3.Config  `json:"s3"`
 }
 
 // Creates a new configuration object
@@ -340,6 +342,8 @@ func (c *Config) DialectConfig() (dialects.Dialect, error) {
 		return &c.SNS, nil
 	case "abs":
 		return &c.ABS, nil
+	case "s3":
+		return &c.S3, nil
 	}
 	return nil, errors.New("not supported `dialect` in the configuration file.")
 }
@@ -359,14 +363,14 @@ func init() {
 	config = NewConfig(*filename)
 	dialect, err := config.DialectConfig()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Loading dialect configuration is failed: ", err)
 	}
 	if !dialect.IsValid() {
-		log.Fatal(err)
+		log.Fatal("Dialect configuration is incorrect or incomplete: ", err)
 	}
 	storageClient, err = dialect.NewClient()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Client initialization is failed: ", err)
 	}
 
 	jobQueue = make(chan *Job, config.GetMaxQueueSize())

@@ -20,5 +20,13 @@
     "access_key_id": "",
     "secret_access_key": "",
     "topic_arn": "sns:..."
+  },
+  "s3": {
+    "region": "",
+    "endpoint": "",
+    "access_key_id": "",
+    "secret_access_key": "",
+    "bucket": "name of the blob",
+    "blob_path": "path/to/dir/"
   }
 }
