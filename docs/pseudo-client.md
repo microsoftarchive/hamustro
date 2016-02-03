@@ -24,7 +24,7 @@ t = ClientTracker(
 It will generate pre-populated information for new events so it should not be calculated on adding each event.
 
 ```cpp
-// Generated as hash(device_id + client_id + system_version + product_version)
+// Generated as md5(device_id + client_id + system_version + product_version)
 t.GenerateSession()
 ```
 
@@ -43,8 +43,8 @@ To track events you should call the following:
 ```cpp
 t.TrackEvent(
   event string, // required
-  ser_id int, 
-  params string, 
+  user_id int,
+  params string,
   is_testing bool // default: false
 )
 ```
@@ -94,7 +94,7 @@ Please wait for `200` response code before you delete the already sent payloads.
 Please define the following headers for sending:
 
 ```
-X-Hamustro-Time: isoformat UTC timestamp without timezone
+X-Hamustro-Time: EPOCH UTC timestamp
 X-Hamustro-Signature: base64(sha256(X-Time + "|" + md5hex(request.body) + "|" + t.shared_secret_key))
 ```
 
