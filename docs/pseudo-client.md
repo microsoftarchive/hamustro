@@ -60,7 +60,7 @@ It'll queue up the events within the `ClientTracker`. You should store this in a
 
 For sending messages we're using [Protobuf](https://developers.google.com/protocol-buffers/?hl=en). This is quicker to handle and smaller than JSON.
 
-This is the message [format](payload/payload.proto) we're using:
+This is the message [format](../payload/payload.proto) we're using:
 
 ```protobuf
 message Payload {
@@ -97,6 +97,8 @@ Please define the following headers for sending:
 X-Hamustro-Time: isoformat UTC timestamp without timezone
 X-Hamustro-Signature: base64(sha256(X-Time + "|" + md5hex(request.body) + "|" + t.shared_secret_key))
 ```
+
+You can check out the proper signature generation in [Python](https://github.com/sub-ninja/hamustro/blob/master/utils/message.py#L46-L51).
 
 Send this information to `/api/v1/track`.
 
