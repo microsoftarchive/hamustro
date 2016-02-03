@@ -1,5 +1,5 @@
 message Payload {
-  required string at = 1;
+  required uint64 at = 1;
   required string event = 2;
   required uint32 nr = 3;
   optional uint32 user_id = 4;

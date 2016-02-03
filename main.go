@@ -8,6 +8,8 @@ import (
 	"./dialects/sns"
 	"./payload"
 	"crypto/md5"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -199,13 +201,16 @@ func GetSignature(body []byte, time string) string {
 	bodyHash := md5.New()
 	io.WriteString(bodyHash, string(body[:]))
 
-	requestHash := md5.New()
+	requestHash := sha256.New()
 	io.WriteString(requestHash, time)
 	io.WriteString(requestHash, "|")
 	io.WriteString(requestHash, hex.EncodeToString(bodyHash.Sum(nil)))
 	io.WriteString(requestHash, "|")
 	io.WriteString(requestHash, config.SharedSecret)
-	return hex.EncodeToString(requestHash.Sum(nil))
+
+	encodedRequestHash := base64.StdEncoding.EncodeToString(requestHash.Sum(nil))
+	return encodedRequestHash
+	// return hex.EncodeToString(requestHash.Sum(nil))
 }
 
 // Controller for `/api/v1/track`

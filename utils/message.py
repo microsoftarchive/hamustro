@@ -1,4 +1,6 @@
 import uuid
+import time
+import base64
 import random
 import hashlib
 import datetime
@@ -8,11 +10,11 @@ class Message(object):
     def __init__(self, random_payload=True):
         self.random_payload = random_payload
         self.collection = self.set_collection()
-        self.time = datetime.datetime(2016,1,1).isoformat()
+        self.time = 1454514088
 
     def get_payload(self):
         p = Payload()
-        p.at = datetime.datetime.utcnow().isoformat()
+        p.at = int(time.time())
         p.event = 'Event.{}'.format(random.randint(10000,99999))
         p.nr = random.randint(1,1000)
         p.user_id = random.randint(1,10000)
@@ -42,6 +44,8 @@ class Message(object):
         return self.collection.SerializeToString()
 
     def signature(self, shared_secret):
-        return hashlib.md5("{time}|{md5body}|{shared_secret}" \
-            .format(time=self.time, md5body=hashlib.md5(self.body).hexdigest(), shared_secret=shared_secret)) \
-            .hexdigest().decode('utf-8')
+        md5hex = hashlib.md5(self.body).hexdigest()
+        bytehash = hashlib.sha256("{time}|{md5hex}|{shared_secret}" \
+            .format(time=self.time, md5hex=md5hex, shared_secret=shared_secret)) \
+            .digest()
+        return base64.b64encode(bytehash).decode('utf-8')

@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import time
 import json
 import datetime
 import argparse
@@ -16,7 +17,7 @@ if __name__ == '__main__':
     shared_secret = config.get('shared_secret', 'ultrasafesecret')
 
     msg = Message(random_payload=False)
-    msg.time = datetime.datetime.utcnow().isoformat()
+    msg.time = int(time.time())
     resp = requests.post(args.URL, headers={
         'X-Hamustro-Time': msg.time,
         'X-Hamustro-Signature': msg.signature(shared_secret)

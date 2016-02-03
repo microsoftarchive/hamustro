@@ -4,6 +4,7 @@ import (
 	"../payload"
 	"bytes"
 	"encoding/json"
+	"time"
 )
 
 type Event struct {
@@ -31,7 +32,7 @@ func NewEvent(meta *payload.Collection, payload *payload.Payload) *Event {
 		Nr:             payload.GetNr(),
 		SystemVersion:  meta.GetSystemVersion(),
 		ProductVersion: meta.GetProductVersion(),
-		At:             payload.GetAt(),
+		At:             ConvertIsoformat(payload.GetAt()),
 		Event:          payload.GetEvent(),
 		System:         meta.GetSystem(),
 		ProductGitHash: meta.GetProductGitHash(),
@@ -39,6 +40,10 @@ func NewEvent(meta *payload.Collection, payload *payload.Payload) *Event {
 		IP:             payload.GetIp(),
 		Parameters:     payload.GetParameters(),
 		IsTesting:      payload.GetIsTesting()}
+}
+
+func ConvertIsoformat(at uint64) string {
+	return time.Unix(int64(at), 0).Format("2006-01-02T15:04:05.999999")
 }
 
 // Send a single Event into the queue
