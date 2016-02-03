@@ -10,7 +10,7 @@ Create a `ClientTracker` object on application open.
 t = ClientTracker(
   collector_url string, // required, set from config
   shared_secret_key string, // required, set from config
-  device_id string, // required
+  device_id string, // required, please MD5 it
   client_id string, // required
   system_version string, // required
   product_version string, // required
@@ -26,9 +26,6 @@ It will generate pre-populated information for new events so it should not be ca
 ```cpp
 // Generated as hash(device_id + client_id + system_version + product_version)
 t.GenerateSession()
-
-// Set current IP address
-t.SetIP() 
 ```
 
 Loading information from persistent storage.
@@ -54,7 +51,8 @@ t.TrackEvent(
 
 Please set automatically 
 - the `at` string attribute for the events - it must contain an isoformat UTC timestamp without timezone information. e.g: `2016-01-28T16:17:48.777389` 
-- the `nr` integer attribute - it must contain the serial number of this event within the session all time. So, it starts counting from the first event in the session and it never defaults for that session, not even new application open. 
+- the `nr` integer attribute - it must contain the serial number of this event within the session all time. So, it starts counting from the first event in the session and it never defaults for that session, not even new application open,
+- the `ip` string attribute for actual IP address.
 
 It'll queue up the events within the `ClientTracker`. You should store this in a persistent storage. Please make sure to save the `ClientTracker`'s attributes with the event because you will need to send to the `collector_url` by session.
 
