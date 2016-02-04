@@ -49,6 +49,11 @@ func (c *SNSStorage) IsBufferedStorage() bool {
 	return false
 }
 
+// Returns the converter function
+func (c *SNSStorage) GetConverter() dialects.Converter {
+	return dialects.ConvertToJSON
+}
+
 // Publish a single Event to SNS topic.
 func (c *SNSStorage) Save(msg *string) error {
 	params := &sns.PublishInput{

@@ -16,6 +16,7 @@
     "access_key": "",
     "container": "name of the container",
     "blob_path": "path/to/dir/"
+    "file_format": "json"
   },
   "sns": {
     "region": "",
@@ -29,6 +30,7 @@
     "access_key_id": "",
     "secret_access_key": "",
     "bucket": "name of the blob",
-    "blob_path": "path/to/dir/"
+    "blob_path": "path/to/dir/",
+    "file_format": "json"
   }
 }

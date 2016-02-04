@@ -2,8 +2,6 @@ package dialects
 
 import (
 	"../payload"
-	"bytes"
-	"encoding/json"
 	"time"
 )
 
@@ -47,13 +45,4 @@ func NewEvent(meta *payload.Collection, payload *payload.Payload) *Event {
 		IP:             payload.GetIp(),
 		Parameters:     payload.GetParameters(),
 		IsTesting:      payload.GetIsTesting()}
-}
-
-// Dumps the Event into a JSON string
-func (event *Event) GetJSONMessage() (string, error) {
-	b := new(bytes.Buffer)
-	if err := json.NewEncoder(b).Encode(event); err != nil {
-		return "", err
-	}
-	return b.String(), nil
 }

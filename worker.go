@@ -52,11 +52,10 @@ func (w *Worker) Start() {
 					fmt.Printf("[%d] Received a job request!\n", w.ID)
 				}
 				if !storageClient.IsBufferedStorage() {
-					// Convert the message to JSON string
-					// TODO: Every dialect can define an output format!
-					msg, err := job.Event.GetJSONMessage()
+					// Convert the message to string
+					msg, err := storageClient.GetConverter()(job.Event)
 					if err != nil {
-						log.Printf("(%d worker) Encoding message to JSON is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
+						log.Printf("(%d worker) Encoding message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
 						job.MarkAsFailed(w.RetryAttempt)
 						continue
 					}
@@ -70,7 +69,7 @@ func (w *Worker) Start() {
 					// Add message to the buffer if the storge is a buffered writer
 					w.AddEventToBuffer(job.Event)
 					if w.IsBufferFull() {
-						if err := storageClient.Save(w.JoinBufferedEvents()); err != nil {
+						if err := storageClient.Save(w.JoinBufferedEvents(storageClient.GetConverter())); err != nil {
 							// TODO: Define a limit, after dump the records into local file.
 							w.IncreasePenalty()
 							log.Printf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
@@ -85,7 +84,7 @@ func (w *Worker) Start() {
 				// We have received a signal to stop.
 				if storageClient.IsBufferedStorage() && len(w.BufferedEvents) != 0 {
 					log.Printf("(%d worker) Flushing %d buffered messages", w.ID, len(w.BufferedEvents))
-					if err := storageClient.Save(w.JoinBufferedEvents()); err != nil {
+					if err := storageClient.Save(w.JoinBufferedEvents(storageClient.GetConverter())); err != nil {
 						// TODO: Dump the records into local file.
 						log.Printf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 					}
@@ -111,11 +110,11 @@ func (w *Worker) Stop(wg *sync.WaitGroup) {
 }
 
 // Joins the buffered messages
-func (w *Worker) JoinBufferedEvents() *string {
+func (w *Worker) JoinBufferedEvents(fn dialects.Converter) *string {
 	var buffer bytes.Buffer
 
 	for i := range w.BufferedEvents {
-		msg, _ := w.BufferedEvents[i].GetJSONMessage()
+		msg, _ := fn(w.BufferedEvents[i])
 		buffer.WriteString(msg)
 	}
 	concatString := buffer.String()

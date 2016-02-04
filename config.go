@@ -7,7 +7,7 @@ import (
 	"./dialects/s3"
 	"./dialects/sns"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -101,5 +101,5 @@ func (c *Config) DialectConfig() (dialects.Dialect, error) {
 	case "s3":
 		return &c.S3, nil
 	}
-	return nil, errors.New("not supported `dialect` in the configuration file.")
+	return nil, fmt.Errorf("Not supported `%s` dialect in the configuration file.", c.Dialect)
 }

@@ -8,10 +8,11 @@ import (
 
 // Azure Queue Storage configuration file.
 type Config struct {
-	Account   string `json:"account"`
-	AccessKey string `json:"access_key"`
-	Container string `json:"container"`
-	BlobPath  string `json:"blob_path"`
+	Account    string `json:"account"`
+	AccessKey  string `json:"access_key"`
+	Container  string `json:"container"`
+	BlobPath   string `json:"blob_path"`
+	FileFormat string `json:"file_format"`
 }
 
 // Checks is it valid or not
@@ -25,11 +26,16 @@ func (c *Config) NewClient() (dialects.StorageClient, error) {
 	if err != nil {
 		return nil, err
 	}
+	converterFunction, err := dialects.GetConverterFunction(c.FileFormat)
+	if err != nil {
+		return nil, err
+	}
 	return &BlobStorage{
 		Account:   c.Account,
 		AccessKey: c.AccessKey,
 		BlobPath:  c.BlobPath,
 		Container: c.Container,
+		Converter: converterFunction,
 		Client:    serviceClient.GetBlobService()}, nil
 }
 
@@ -39,12 +45,18 @@ type BlobStorage struct {
 	AccessKey string
 	Container string
 	BlobPath  string
+	Converter dialects.Converter
 	Client    storage.BlobStorageClient
 }
 
 // It is a buffered storage.
 func (c *BlobStorage) IsBufferedStorage() bool {
 	return true
+}
+
+// Returns the converter function
+func (c *BlobStorage) GetConverter() dialects.Converter {
+	return c.Converter
 }
 
 // Send a single Event into the Azure Queue Storage.

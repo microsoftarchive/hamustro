@@ -43,6 +43,11 @@ func (c *QueueStorage) IsBufferedStorage() bool {
 	return false
 }
 
+// Returns the converter function
+func (c *QueueStorage) GetConverter() dialects.Converter {
+	return dialects.ConvertToJSON
+}
+
 // Send a single Event into the Azure Queue Storage.
 func (c *QueueStorage) Save(msg *string) error {
 	if err := c.Client.PutMessage(c.QueueName, *msg, storage.PutMessageParameters{}); err != nil {

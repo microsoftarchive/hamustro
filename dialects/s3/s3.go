@@ -18,6 +18,7 @@ type Config struct {
 	BlobPath        string `json:"blob_path"`
 	Endpoint        string `json:"endpoint"`
 	Region          string `json:"region"`
+	FileFormat      string `json:"file_format"`
 }
 
 // Checks is it valid or not
@@ -32,6 +33,10 @@ func (c *Config) NewClient() (dialects.StorageClient, error) {
 	if err != nil {
 		return nil, err
 	}
+	converterFunction, err := dialects.GetConverterFunction(c.FileFormat)
+	if err != nil {
+		return nil, err
+	}
 	config := &aws.Config{
 		Region:           &c.Region,
 		Credentials:      creds,
@@ -43,6 +48,7 @@ func (c *Config) NewClient() (dialects.StorageClient, error) {
 		Bucket:          c.Bucket,
 		BlobPath:        c.BlobPath,
 		Region:          c.Region,
+		Converter:       converterFunction,
 		Client:          s3.New(session.New(), config)}, nil
 }
 
@@ -54,12 +60,18 @@ type S3Storage struct {
 	BlobPath        string
 	Region          string
 	EndPoint        string
+	Converter       dialects.Converter
 	Client          *s3.S3
 }
 
 // It is a buffered storage.
 func (c *S3Storage) IsBufferedStorage() bool {
 	return true
+}
+
+// Returns the converter function
+func (c *S3Storage) GetConverter() dialects.Converter {
+	return c.Converter
 }
 
 // Publish a single Event to SNS topic.
