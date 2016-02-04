@@ -1,9 +1,10 @@
 {
   "dialect": "aqs|abs|sns",
   "logfile": "",
-  "max_worker_size": 8,
+  "max_worker_size": 5,
   "max_queue_size": 100,
   "buffer_size": 10000,
+  "spread_buffer_size": false,
   "shared_secret": "ultrasafesecret",
   "aqs": {
     "account": "",

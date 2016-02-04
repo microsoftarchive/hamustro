@@ -23,22 +23,3 @@ cd ~/
   echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> .profile
   source .profile
 cd -
-
-# Install wrk network monitoring tool
-git clone https://github.com/wg/wrk.git /tmp/wrk
-cd /tmp/wrk
-  make
-  mv wrk /usr/local/bin
-cd -
-rm -Rf /tmp/wrk
-
-# Install dependencies
-go get -u github.com/Azure/azure-sdk-for-go/storage
-go get -u github.com/aws/aws-sdk-go
-go get -u github.com/golang/protobuf/proto
-go get -u github.com/go-ini/ini
-go get -u github.com/jmespath/go-jmespath
-go get -u github.com/golang/protobuf/protoc-gen-go
-
-# Install python packages for utils
-pip install protobuf

@@ -18,27 +18,32 @@ all:
 	@echo "Please specify a target!"
 
 install/%:
-	./install.sh $*
+	./utils/installer/_$*.sh
 
 build:
 	protoc --go_out=. payload/*.proto
-	protoc --python_out=utils payload/*.proto
 	go build -o hamustro
 
-run: build
+build-dev: build
+	protoc --python_out=utils payload/*.proto
+
+dev: build-dev
 	./hamustro -config $(HAMUSTRO_CONFIG) -verbose
+
+server: build
+	./hamustro -config $(HAMUSTRO_CONFIG)
 
 profile/:
 	mkdir -p $@
 
 profile/cpu: profile/
-	go tool pprof --pdf tivan $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/profile > $@.pdf
+	go tool pprof --pdf hamustro $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/profile > $@.pdf
 
 profile/goroutine: profile/
-	go tool pprof --pdf tivan $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/goroutine > $@.pdf
+	go tool pprof --pdf hamustro $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/goroutine > $@.pdf
 
 profile/heap: profile/
-	go tool pprof --pdf tivan $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/heap > $@.pdf
+	go tool pprof --pdf hamustro $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/heap > $@.pdf
 
 tests/send:
 	python utils/send_single_message.py $(HAMUSTRO_CONFIG) "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
@@ -50,4 +55,4 @@ tests/stress/n-messages/:
 	python utils/generate_stress_messages.py -r $(HAMUSTRO_CONFIG) $@
 
 tests/stress/%: tests/stress/%-messages/
-	cd $< && wrk -t5 -c10 -d1m -s ../run.lua "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
+	cd $< && wrk -t5 -c10 -d5m -s ../run.lua "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
