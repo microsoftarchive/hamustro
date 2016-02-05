@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"math/rand"
+	"path"
 	"strconv"
 	"time"
 )
@@ -21,11 +22,10 @@ func RandStringBytes(n int) string {
 }
 
 // Get a random name for the blob
-func GetRandomPath(path string, extension string) string {
+func GetRandomPath(basePath string, extension string) string {
 	timestamp := strconv.Itoa(int(time.Now().Unix()))
 	fileName := fmt.Sprintf("%s-%s.%s.gz", timestamp, RandStringBytes(20), extension)
-	filePath := path + fileName
-	return filePath
+	return path.Join(basePath, fileName)
 }
 
 // Compress the given string

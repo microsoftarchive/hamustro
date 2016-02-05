@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"flag"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"io"
 	"io/ioutil"
