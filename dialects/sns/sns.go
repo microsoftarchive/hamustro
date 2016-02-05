@@ -2,6 +2,7 @@ package sns
 
 import (
 	".."
+	"bytes"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -51,13 +52,18 @@ func (c *SNSStorage) IsBufferedStorage() bool {
 
 // Returns the converter function
 func (c *SNSStorage) GetConverter() dialects.Converter {
-	return dialects.ConvertToJSON
+	return dialects.ConvertJSON
+}
+
+// Returns the batch converter function
+func (c *SNSStorage) GetBatchConverter() dialects.BatchConverter {
+	return nil
 }
 
 // Publish a single Event to SNS topic.
-func (c *SNSStorage) Save(msg *string) error {
+func (c *SNSStorage) Save(msg *bytes.Buffer) error {
 	params := &sns.PublishInput{
-		Message:  msg,
+		Message:  aws.String(msg.String()),
 		TopicArn: &c.TopicArn}
 	_, err := c.Client.Publish(params)
 	if err != nil {

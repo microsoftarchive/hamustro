@@ -3,6 +3,7 @@ package dialects
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
@@ -20,25 +21,25 @@ func RandStringBytes(n int) string {
 }
 
 // Get a random name for the blob
-func GetRandomPath(path string) string {
+func GetRandomPath(path string, extension string) string {
 	timestamp := strconv.Itoa(int(time.Now().Unix()))
-	fileName := timestamp + "-" + RandStringBytes(20) + ".json.gz"
+	fileName := fmt.Sprintf("%s-%s.%s.gz", timestamp, RandStringBytes(20), extension)
 	filePath := path + fileName
 	return filePath
 }
 
 // Compress the given string
-func Compress(msg *string) (*bytes.Buffer, error) {
-	var b bytes.Buffer
-	gz := gzip.NewWriter(&b)
-	if _, err := gz.Write([]byte(*msg)); err != nil {
-		return &b, err
+func Compress(msg *bytes.Buffer) (*bytes.Buffer, error) {
+	b := new(bytes.Buffer)
+	gz := gzip.NewWriter(b)
+	if _, err := gz.Write(msg.Bytes()); err != nil {
+		return b, err
 	}
 	if err := gz.Flush(); err != nil {
-		return &b, err
+		return b, err
 	}
 	if err := gz.Close(); err != nil {
-		return &b, err
+		return b, err
 	}
-	return &b, nil
+	return b, nil
 }

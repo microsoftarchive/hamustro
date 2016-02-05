@@ -26,27 +26,29 @@ func (c *Config) NewClient() (dialects.StorageClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	converterFunction, err := dialects.GetConverterFunction(c.FileFormat)
+	converterFunction, err := dialects.GetBatchConverterFunction(c.FileFormat)
 	if err != nil {
 		return nil, err
 	}
 	return &BlobStorage{
-		Account:   c.Account,
-		AccessKey: c.AccessKey,
-		BlobPath:  c.BlobPath,
-		Container: c.Container,
-		Converter: converterFunction,
-		Client:    serviceClient.GetBlobService()}, nil
+		Account:        c.Account,
+		AccessKey:      c.AccessKey,
+		BlobPath:       c.BlobPath,
+		Container:      c.Container,
+		FileFormat:     c.FileFormat,
+		BatchConverter: converterFunction,
+		Client:         serviceClient.GetBlobService()}, nil
 }
 
 // Azure Queue Storage dialect.
 type BlobStorage struct {
-	Account   string
-	AccessKey string
-	Container string
-	BlobPath  string
-	Converter dialects.Converter
-	Client    storage.BlobStorageClient
+	Account        string
+	AccessKey      string
+	Container      string
+	BlobPath       string
+	FileFormat     string
+	BatchConverter dialects.BatchConverter
+	Client         storage.BlobStorageClient
 }
 
 // It is a buffered storage.
@@ -54,18 +56,23 @@ func (c *BlobStorage) IsBufferedStorage() bool {
 	return true
 }
 
-// Returns the converter function
+// There is no normal converter for ABS
 func (c *BlobStorage) GetConverter() dialects.Converter {
-	return c.Converter
+	return nil
+}
+
+// Returns the converter function
+func (c *BlobStorage) GetBatchConverter() dialects.BatchConverter {
+	return c.BatchConverter
 }
 
 // Send a single Event into the Azure Queue Storage.
-func (c *BlobStorage) Save(msg *string) error {
+func (c *BlobStorage) Save(msg *bytes.Buffer) error {
 	buffer, err := dialects.Compress(msg)
 	if err != nil {
 		return err
 	}
-	if err := c.Client.CreateBlockBlobFromReader(c.Container, dialects.GetRandomPath(c.BlobPath),
+	if err := c.Client.CreateBlockBlobFromReader(c.Container, dialects.GetRandomPath(c.BlobPath, c.FileFormat),
 		uint64(buffer.Len()), bytes.NewReader(buffer.Bytes()), nil); err != nil {
 		return err
 	}

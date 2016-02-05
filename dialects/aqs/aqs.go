@@ -2,6 +2,7 @@ package aqs
 
 import (
 	".."
+	"bytes"
 	"github.com/Azure/azure-sdk-for-go/storage"
 )
 
@@ -45,12 +46,17 @@ func (c *QueueStorage) IsBufferedStorage() bool {
 
 // Returns the converter function
 func (c *QueueStorage) GetConverter() dialects.Converter {
-	return dialects.ConvertToJSON
+	return dialects.ConvertJSON
+}
+
+// Returns the batch converter function
+func (c *QueueStorage) GetBatchConverter() dialects.BatchConverter {
+	return nil
 }
 
 // Send a single Event into the Azure Queue Storage.
-func (c *QueueStorage) Save(msg *string) error {
-	if err := c.Client.PutMessage(c.QueueName, *msg, storage.PutMessageParameters{}); err != nil {
+func (c *QueueStorage) Save(msg *bytes.Buffer) error {
+	if err := c.Client.PutMessage(c.QueueName, msg.String(), storage.PutMessageParameters{}); err != nil {
 		return err
 	}
 	return nil

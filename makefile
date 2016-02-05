@@ -55,4 +55,4 @@ tests/stress/n-messages/:
 	python utils/generate_stress_messages.py -r $(HAMUSTRO_CONFIG) $@
 
 tests/stress/%: tests/stress/%-messages/
-	cd $< && wrk -t5 -c10 -d5m -s ../run.lua "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
+	cd $< && wrk -t5 -c10 -d1m -s ../run.lua "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"

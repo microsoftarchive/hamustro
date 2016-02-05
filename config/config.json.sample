@@ -15,7 +15,7 @@
     "account": "",
     "access_key": "",
     "container": "name of the container",
-    "blob_path": "path/to/dir/"
+    "blob_path": "path/to/dir/",
     "file_format": "json"
   },
   "sns": {

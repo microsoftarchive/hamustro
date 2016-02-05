@@ -33,7 +33,7 @@ func (c *Config) NewClient() (dialects.StorageClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	converterFunction, err := dialects.GetConverterFunction(c.FileFormat)
+	converterFunction, err := dialects.GetBatchConverterFunction(c.FileFormat)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,8 @@ func (c *Config) NewClient() (dialects.StorageClient, error) {
 		Bucket:          c.Bucket,
 		BlobPath:        c.BlobPath,
 		Region:          c.Region,
-		Converter:       converterFunction,
+		FileFormat:      c.FileFormat,
+		BatchConverter:  converterFunction,
 		Client:          s3.New(session.New(), config)}, nil
 }
 
@@ -60,7 +61,8 @@ type S3Storage struct {
 	BlobPath        string
 	Region          string
 	EndPoint        string
-	Converter       dialects.Converter
+	FileFormat      string
+	BatchConverter  dialects.BatchConverter
 	Client          *s3.S3
 }
 
@@ -71,11 +73,16 @@ func (c *S3Storage) IsBufferedStorage() bool {
 
 // Returns the converter function
 func (c *S3Storage) GetConverter() dialects.Converter {
-	return c.Converter
+	return nil
+}
+
+// Returns the batch converter function
+func (c *S3Storage) GetBatchConverter() dialects.BatchConverter {
+	return c.BatchConverter
 }
 
 // Publish a single Event to SNS topic.
-func (c *S3Storage) Save(msg *string) error {
+func (c *S3Storage) Save(msg *bytes.Buffer) error {
 	buffer, err := dialects.Compress(msg)
 	if err != nil {
 		return err
@@ -84,7 +91,7 @@ func (c *S3Storage) Save(msg *string) error {
 	fileBytes := buffer.Bytes()
 	params := &s3.PutObjectInput{
 		Bucket:        &c.Bucket,
-		Key:           aws.String(dialects.GetRandomPath(c.BlobPath)),
+		Key:           aws.String(dialects.GetRandomPath(c.BlobPath, c.FileFormat)),
 		Body:          bytes.NewReader(fileBytes),
 		ContentLength: aws.Int64(int64(fileSize)),
 		ContentType:   aws.String(http.DetectContentType(fileBytes)),

@@ -2,6 +2,7 @@ package dialects
 
 import (
 	"../payload"
+	"strconv"
 	"time"
 )
 
@@ -45,4 +46,23 @@ func NewEvent(meta *payload.Collection, payload *payload.Payload) *Event {
 		IP:             payload.GetIp(),
 		Parameters:     payload.GetParameters(),
 		IsTesting:      payload.GetIsTesting()}
+}
+
+// Returns a
+func (event *Event) String() []string {
+	return []string{
+		event.DeviceID,
+		event.ClientID,
+		event.Session,
+		strconv.FormatInt(int64(event.Nr), 10),
+		event.SystemVersion,
+		event.ProductVersion,
+		event.At,
+		event.Event,
+		event.System,
+		event.ProductGitHash,
+		strconv.FormatInt(int64(event.UserID), 10),
+		event.IP,
+		event.Parameters,
+		strconv.FormatBool(event.IsTesting)}
 }

@@ -1,10 +1,15 @@
 package dialects
 
+import (
+	"bytes"
+)
+
 // Interface for processing events
 type StorageClient interface {
 	IsBufferedStorage() bool
 	GetConverter() Converter
-	Save(*string) error
+	GetBatchConverter() BatchConverter
+	Save(*bytes.Buffer) error
 }
 
 // Dialect interface for create StorageQueue from Configuration

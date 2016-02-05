@@ -2,7 +2,6 @@ package main
 
 import (
 	"./dialects"
-	"bytes"
 	"fmt"
 	"log"
 	"sync"
@@ -49,7 +48,7 @@ func (w *Worker) Start() {
 			case job := <-w.JobChannel:
 				// We have received a work request.
 				if verbose {
-					fmt.Printf("[%d] Received a job request!\n", w.ID)
+					fmt.Printf("(%d worker) Received a job request!\n", w.ID)
 				}
 				if !storageClient.IsBufferedStorage() {
 					// Convert the message to string
@@ -61,35 +60,55 @@ func (w *Worker) Start() {
 					}
 
 					// Save message immediately.
-					if err := storageClient.Save(&msg); err != nil {
+					if err := storageClient.Save(msg); err != nil {
 						log.Printf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
 						job.MarkAsFailed(w.RetryAttempt)
+						continue
 					}
 				} else {
 					// Add message to the buffer if the storge is a buffered writer
 					w.AddEventToBuffer(job.Event)
-					if w.IsBufferFull() {
-						if err := storageClient.Save(w.JoinBufferedEvents(storageClient.GetConverter())); err != nil {
-							// TODO: Define a limit, after dump the records into local file.
-							w.IncreasePenalty()
-							log.Printf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
-							continue
-						}
-						w.ResetBuffer()
+
+					// Continue if the buffer is not full
+					if !w.IsBufferFull() {
+						continue
 					}
+
+					// Convert messages to string
+					msg, err := storageClient.GetBatchConverter()(w.BufferedEvents)
+					if err != nil {
+						w.IncreasePenalty()
+						log.Printf("(%d worker) Batch converting buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+						continue
+					}
+					// Save messages
+					if err := storageClient.Save(msg); err != nil {
+						w.IncreasePenalty()
+						log.Printf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+						continue
+					}
+					w.ResetBuffer()
 				}
 			case wg := <-w.quit:
+				defer wg.Done()
 				log.Printf("(%d worker) Received a signal to stop", w.ID)
 
 				// We have received a signal to stop.
 				if storageClient.IsBufferedStorage() && len(w.BufferedEvents) != 0 {
 					log.Printf("(%d worker) Flushing %d buffered messages", w.ID, len(w.BufferedEvents))
-					if err := storageClient.Save(w.JoinBufferedEvents(storageClient.GetConverter())); err != nil {
-						// TODO: Dump the records into local file.
+
+					// Convert messages to string
+					msg, err := storageClient.GetBatchConverter()(w.BufferedEvents)
+					if err != nil {
+						log.Printf("(%d worker) Batch converting buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+						return
+					}
+					// Save messages
+					if err := storageClient.Save(msg); err != nil {
 						log.Printf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+						return
 					}
 				}
-				wg.Done()
 				log.Printf("(%d worker) Stopped successfully", w.ID)
 				return
 			}
@@ -107,18 +126,6 @@ func (w *Worker) Stop(wg *sync.WaitGroup) {
 		}
 		w.quit <- wg
 	}()
-}
-
-// Joins the buffered messages
-func (w *Worker) JoinBufferedEvents(fn dialects.Converter) *string {
-	var buffer bytes.Buffer
-
-	for i := range w.BufferedEvents {
-		msg, _ := fn(w.BufferedEvents[i])
-		buffer.WriteString(msg)
-	}
-	concatString := buffer.String()
-	return &concatString
 }
 
 // Increase the value of the penalty attribute
