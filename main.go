@@ -49,7 +49,6 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	// Do not accept new events while the server is shutting down.
 	if isTerminating {
 		if verbose {
-			fmt.Println("Request was dropped: the server is currenly shutting down")
 			log.Println("Request was dropped: the server is currenly shutting down")
 		}
 		w.WriteHeader(http.StatusServiceUnavailable)
