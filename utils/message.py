@@ -25,11 +25,12 @@ class Message(object):
         c = Collection()
         c.device_id = str(uuid.uuid4())
         c.client_id = hashlib.md5(str(random.randint(1,1000000))).hexdigest()
-        c.session = hashlib.md5(str(random.randint(1,1000000))).hexdigest()
         c.system_version = '{}.{}'.format(random.randint(1,5), random.randint(1,50))
         c.product_version = '{}.{}'.format(random.randint(1,5), random.randint(1,50))
+        c.session = hashlib.md5("{device_id}:{client_id}:{system_version}:{product_version}".format(
+            device_id=c.device_id, client_id=c.client_id, system_version=c.system_version,
+            product_version=c.product_version)).hexdigest()
         c.system = ['OSX','Windows','iOS','Android'][random.randint(0,3)]
-
         number = random.randint(1,25) \
             if self.random_payload \
             else 1
