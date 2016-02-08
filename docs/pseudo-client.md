@@ -85,7 +85,7 @@ message Collection {
 }
 ```
 
-You can send multiple `Payloads`, but as you can see you have to send these by session. Normally you won't have multiple sessions in your code but it can happen with bad connection and updates happening.
+You can send multiple `Payloads`, but as you can see you have to send these by session. Normally you won't have multiple sessions in your code but it can happen with bad connection and updates happening. Please sign them as 'Sent', but don't delete them before getting a response of '200'.
 
 The collector only accepts `POST` with a body of a valid Protobuf bytestream.
 
