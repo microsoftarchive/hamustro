@@ -3,9 +3,8 @@
 set -e
 
 if [[ `uname -s` == "Darwin" ]]; then
-  # OSX instllation
+  # OSX installation
   brew install go
-  brew install protobuf
 else
   # Linux (Ubuntu & AWS) installation
   cd /tmp/
@@ -13,7 +12,6 @@ else
     tar -xvf go1.5.3.linux-amd64.tar.gz
     mv go /usr/local && mkdir -p /usr/local/gopath
   cd -
-  apt-get install protobuf-compiler
 fi
 
 # Set environment variables
