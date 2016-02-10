@@ -22,10 +22,9 @@ install/%:
 
 dialects/%.go:
 dialects/%/%.go:
-payload/%.go:
 %.go:
 
-hamustro: dialects/*.go dialects/*/*.go payload/*.go *.go
+hamustro: dialects/*.go dialects/*/*.go *.go
 	protoc --go_out=. payload/*.proto
 	go build -o $@
 
