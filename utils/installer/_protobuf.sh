@@ -7,5 +7,5 @@ if [[ `uname -s` == "Darwin" ]]; then
   brew install protobuf
 else
   # Linux installation
-  apt-get install protobuf-compiler
+  apt-get install -y protobuf-compiler
 fi

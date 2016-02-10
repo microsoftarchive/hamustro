@@ -7,3 +7,4 @@ install:
 - sudo apt-get update -q
 - sudo make install/protobuf
 script: make tests/run
+go_import_path: hamustro
