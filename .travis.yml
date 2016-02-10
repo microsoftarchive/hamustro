@@ -2,6 +2,7 @@ language: go
 go:
 - 1.5
 - tip
+sudo: required
 install:
 - make install/protobuf
 script: make tests/run
