@@ -1,6 +1,6 @@
 # Hamustro - the collector of events
 
-![](http://i.giphy.com/GnCc88zZhSVUc.gif)
+![Hamustro](docs/logo.png)
 
 ## Overview
 
@@ -24,6 +24,65 @@ Inspired by UNIX philosophy (do one thing and do it well) and [Marcio Castilho's
 ## Clients
 
 No official client is available at the moment. If you want to write your own please check out our [pseudo client specification](docs/pseudo-client.md).
+
+## Installation
+
+Please install [Go 1.5+](https://golang.org/dl/) and [Python 2.7 or 3.3+](https://www.python.org/downloads/).
+
+```bash
+$ make install/go # you can install golang with this on OSX/Ubuntu
+$ make install/protobuf # communication format
+$ make install/pkg # golang dependencies
+$ make install/wrk # http benchmarking tool
+$ make install/utils # utils for development
+```
+
+After the package installation, please create your configuration file based on the [sample configuration](config/config.json.sample).
+
+Set up your environment variables.
+
+```bash
+export HAMUSTRO_CONFIG="config/yourconfig.json"
+export HAMUSTRO_HOST="localhost"
+export HAMUSTRO_PORT="8080"
+```
+
+## Start collector
+
+You can start the server for development with the following command:
+```bash
+$ make dev
+```
+
+In the _development_ mode it provides useful messages to track what's happening within the collector. Furthermore it notifies the clients with JSON responses on error.
+
+To turn off the notifications and run the collector for production, please use the following command:
+
+```bash
+$ make server
+```
+
+## Tests
+
+You can run the tests with
+```bash
+$ make tests/run
+```
+
+If you want to start a stress test, please use
+
+```bash
+$ make tests/stress/n-messages # 1-25 payload/request
+$ make tests/stress/1-messages # 1 payload/request
+```
+
+During the stress test, you can profile the heap/cpu/goroutine usage easily in _development_ mode, just type
+
+```bash
+$ make profile/heap
+$ make profile/cpu
+$ make profile/goroutine
+```
 
 ## License
 

@@ -20,17 +20,22 @@ all:
 install/%:
 	./utils/installer/_$*.sh
 
-build:
-	protoc --go_out=. payload/*.proto
-	go build -o hamustro
+dialects/%.go:
+dialects/%/%.go:
+payload/%.go:
+%.go:
 
-build-dev: build
+hamustro: dialects/*.go dialects/*/*.go payload/*.go *.go
+	protoc --go_out=. payload/*.proto
+	go build -o $@
+
+build-dev:
 	protoc --python_out=utils payload/*.proto
 
-dev: build-dev
+dev: hamustro build-dev
 	./hamustro -config $(HAMUSTRO_CONFIG) -verbose
 
-server: build
+server: hamustro
 	./hamustro -config $(HAMUSTRO_CONFIG)
 
 profile/:

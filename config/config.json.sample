@@ -15,8 +15,8 @@
     "account": "",
     "access_key": "",
     "container": "name of the container",
-    "blob_path": "path/to/dir/",
-    "file_format": "json"
+    "blob_path": "path/to/dir/{date}/",
+    "file_format": "json|csv"
   },
   "sns": {
     "region": "",
@@ -29,8 +29,8 @@
     "endpoint": "",
     "access_key_id": "",
     "secret_access_key": "",
-    "bucket": "name of the blob",
-    "blob_path": "path/to/dir/",
-    "file_format": "json"
+    "bucket": "name of the bucket",
+    "blob_path": "path/to/dir/{date}/",
+    "file_format": "json|csv"
   }
 }

@@ -28,7 +28,7 @@ func GetTestEvent(userId uint32) *Event {
 
 func TestConvertEpochIntoIsoformat(t *testing.T) {
 	t.Log("Converting EPOCH timestamp to UTC isoformat timestamp")
-	exp := "2016-02-05T15:05:04"
+	exp := "2016-02-05 15:05:04"
 	if ts := ConvertIsoformat(1454681104); ts != exp {
 		t.Errorf("Expected timestamp was %s but it was %s instead", ts, exp)
 	}
