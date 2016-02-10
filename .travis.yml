@@ -4,5 +4,5 @@ go:
 - tip
 sudo: required
 install:
-- make install/protobuf
+- sudo make install/protobuf
 script: make tests/run
