@@ -4,5 +4,6 @@ go:
 - tip
 sudo: required
 install:
+- sudo apt-get update -q
 - sudo make install/protobuf
 script: make tests/run
