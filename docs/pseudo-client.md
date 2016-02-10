@@ -10,7 +10,7 @@ Create a `ClientTracker` object on application open.
 t = ClientTracker(
   collector_url string, // required, set from config
   shared_secret_key string, // required, set from config
-  device_id string, // required, please sha256 it.
+  device_id string, // required, please sha256hex it.
   client_id string, // required
   system_version string, // required
   product_version string, // required
@@ -24,7 +24,7 @@ t = ClientTracker(
 It will generate pre-populated information for new events so it should not be calculated on adding each event.
 
 ```cpp
-// Generated as md5hex(device_id + ":" + client_id + ":" + system_version + ":" product_version)
+// Generated as md5hex(device_id + ":" + client_id + ":" + system_version + ":" + product_version)
 t.GenerateSession()
 ```
 

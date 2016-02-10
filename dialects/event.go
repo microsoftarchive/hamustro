@@ -8,7 +8,9 @@ import (
 
 // Converts EPOCH timestamp to isoformat string
 func ConvertIsoformat(at uint64) string {
-	return time.Unix(int64(at), 0).Format("2006-01-02T15:04:05")
+	// Use this format instead of isoformat: https://msdn.microsoft.com/en-us/library/dn935026.aspx
+	// It's working with Amazon Redshift and Azure SQL Data Warehouse
+	return time.Unix(int64(at), 0).Format("2006-01-02 15:04:05")
 }
 
 // Single event

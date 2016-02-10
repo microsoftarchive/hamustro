@@ -17,14 +17,15 @@ class Message(object):
         p.at = int(time.time())
         p.event = 'Event.{}'.format(random.randint(10000,99999))
         p.nr = random.randint(1,1000)
-        p.user_id = random.randint(1,10000)
+        p.user_id = random.randint(1,99000000)
+        p.ip = '{}.{}.{}.{}'.format(random.randint(1,255), random.randint(1,255), random.randint(1,255), random.randint(1,255))
         p.is_testing = True
         return p
 
     def set_collection(self):
         c = Collection()
-        c.device_id = str(uuid.uuid4())
-        c.client_id = hashlib.md5(str(random.randint(1,1000000))).hexdigest()
+        c.device_id = hashlib.sha256(str(uuid.uuid4())).hexdigest()
+        c.client_id = hashlib.md5(str(random.randint(1,1000000))).hexdigest()[:20]
         c.system_version = '{}.{}'.format(random.randint(1,5), random.randint(1,50))
         c.product_version = '{}.{}'.format(random.randint(1,5), random.randint(1,50))
         c.session = hashlib.md5("{device_id}:{client_id}:{system_version}:{product_version}".format(
