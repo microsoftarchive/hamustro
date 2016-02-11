@@ -1,6 +1,5 @@
-# Hamustro - the collector of events
 
-![Hamustro](docs/logo.png)
+# ![Hamustro](docs/logo.png) - the collector of events
 
 ## Overview
 
