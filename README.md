@@ -29,10 +29,11 @@ No official client is available at the moment. If you want to write your own ple
 Please install [Go 1.5+](https://golang.org/dl/) and [Python 2.7 or 3.3+](https://www.python.org/downloads/).
 
 ```bash
-$ make install/go # you can install golang with this on OSX/Ubuntu
-$ make install/protobuf # communication format
+$ sudo make install/go && source ~/.profile # you can install golang with this on OSX/Ubuntu if you need it
+$ sudo make install/protobuf # initialize communication format
 $ make install/pkg # golang dependencies
-$ make install/wrk # http benchmarking tool
+$ sudo apt-get install libssl-dev # only on Ubuntu you need this for wrk
+$ sudo make install/wrk # install http benchmarking tool
 $ make install/utils # utils for development
 ```
 
@@ -71,8 +72,8 @@ $ make tests/run
 If you want to start a stress test, please use
 
 ```bash
-$ make tests/stress/n-messages # 1-25 payload/request
-$ make tests/stress/1-messages # 1 payload/request
+$ make tests/stress/n # 1-25 payloads/request
+$ make tests/stress/1 # 1 payload/request
 ```
 
 During the stress test, you can profile the heap/cpu/goroutine usage easily in _development_ mode, just type
