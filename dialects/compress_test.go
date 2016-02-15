@@ -37,6 +37,16 @@ func TestGetRandomPath(t *testing.T) {
 		t.Errorf("Expected extension was csv.gz but it was %s instead", ext)
 	}
 
+	p = GetRandomPath("", "csv")
+	if exp := 38; len(p) != exp {
+		t.Errorf("Expected length was %d without path but it was %d instead", exp, len(p))
+	}
+
+	p = GetRandomPath("dir", "csv")
+	if exp := 42; len(p) != exp {
+		t.Errorf("Expected length was %d with path but it was %d instead", exp, len(p))
+	}
+
 	p = GetRandomPath("dir/to/path/", "csv")
 	if dir := p[0:12]; dir != "dir/to/path/" {
 		t.Errorf("Expected directory path was dir/to/path/ but it was %s instead", dir)

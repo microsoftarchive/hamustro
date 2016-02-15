@@ -23,7 +23,7 @@ type Config struct {
 
 // Checks is it valid or not
 func (c *Config) IsValid() bool {
-	return c.AccessKeyID != "" && c.SecretAccessKey != "" && c.Bucket != "" && c.BlobPath != "" && c.Region != "" && c.Endpoint != ""
+	return c.AccessKeyID != "" && c.SecretAccessKey != "" && c.Bucket != "" && c.Region != "" && c.Endpoint != "" && c.FileFormat != ""
 }
 
 // Create a new StorageClient object based on a configuration file.
