@@ -32,7 +32,6 @@ Please install [Go 1.5+](https://golang.org/dl/) and [Python 2.7 or 3.3+](https:
 $ sudo make install/go && source ~/.profile # you can install golang with this on OSX/Ubuntu if you need it
 $ sudo make install/protobuf # initialize communication format
 $ make install/pkg # golang dependencies
-$ sudo apt-get install libssl-dev # only on Ubuntu you need this for wrk
 $ sudo make install/wrk # install http benchmarking tool
 $ make install/utils # utils for development
 ```

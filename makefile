@@ -14,28 +14,35 @@ ifndef HAMUSTRO_CONFIG
   HAMUSTRO_CONFIG:=$(warning Please define HAMUSTRO_CONFIG environment variable, using "config/config.json.sample")config/config.json.sample
 endif
 
+PYC:=python
+
 all:
 	@echo "Please specify a target!"
 
 install/%:
 	./utils/installer/_$*.sh
 
-dialects/%.go:
-dialects/%/%.go:
-%.go:
+src/%.go:
+src/%/%.go:
+src/%/%/%.go:
 
-hamustro: dialects/*.go dialects/*/*.go *.go
-	protoc --go_out=. payload/*.proto
-	go build -o $@
+hamustro: src/payload/ src/*.go src/*/*.go src/*/*/*.go
+	go build -o $@ src/*.go
 
-build-dev:
-	protoc --python_out=utils payload/*.proto
+src/payload/:
+	protoc --go_out=. proto/*.proto
+	mkdir -p $@ && mv proto/*.go src/payload/
 
-dev: hamustro build-dev
-	./hamustro -config $(HAMUSTRO_CONFIG) -verbose
+utils/payload/:
+	protoc --python_out=. proto/*.proto
+	mkdir -p $@ && mv proto/*.py utils/payload/
+	echo "from payload_pb2 import *" > $@/__init__.py
+
+dev: hamustro utils/payload/
+	./$< -config $(HAMUSTRO_CONFIG) -verbose
 
 server: hamustro
-	./hamustro -config $(HAMUSTRO_CONFIG)
+	./$< -config $(HAMUSTRO_CONFIG)
 
 profile/:
 	mkdir -p $@
@@ -53,13 +60,13 @@ tests/run:
 	go test -v ./...
 
 tests/send:
-	python utils/send_single_message.py $(HAMUSTRO_CONFIG) "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
+	$(PYC) utils/send_single_message.py $(HAMUSTRO_CONFIG) "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
 
 tests/stress/1-messages/:
-	python utils/generate_stress_messages.py $(HAMUSTRO_CONFIG) $@
+	$(PYC) utils/generate_stress_messages.py $(HAMUSTRO_CONFIG) $@
 
 tests/stress/n-messages/:
-	python utils/generate_stress_messages.py -r $(HAMUSTRO_CONFIG) $@
+	$(PYC) utils/generate_stress_messages.py -r $(HAMUSTRO_CONFIG) $@
 
 tests/stress/%: tests/stress/%-messages/
 	cd $< && wrk -t5 -c10 -d1m -s ../run.lua "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"

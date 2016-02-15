@@ -60,7 +60,7 @@ It'll queue up the events within the `ClientTracker`. You should store this in a
 
 For sending messages we're using [Protobuf](https://developers.google.com/protocol-buffers/?hl=en). This is quicker to handle and smaller than JSON.
 
-This is the message [format](../payload/payload.proto) we're using:
+This is the message [format](../proto/payload.proto) we're using:
 
 ```protobuf
 message Payload {
