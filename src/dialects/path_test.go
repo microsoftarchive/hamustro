@@ -39,6 +39,11 @@ func TestGetRandomPath(t *testing.T) {
 		t.Errorf("Expected length was %d without path but it was %d instead", exp, len(p))
 	}
 
+	p = GetRandomPath("", "csv")
+	if p[0] == '/' {
+		t.Errorf("Expected first charater was not / without path but it was %s", p[0])
+	}
+
 	p = GetRandomPath("dir", "csv")
 	if exp := 42; len(p) != exp {
 		t.Errorf("Expected length was %d with path but it was %d instead", exp, len(p))
