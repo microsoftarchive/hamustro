@@ -124,7 +124,7 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Runs before the program starts
-func init() {
+func main() {
 	// Parse the CLI's attributes
 	var filename = flag.String("config", "", "configuration `file` for the dialect")
 	flag.BoolVar(&verbose, "verbose", false, "verbose mode for debugging")
@@ -165,10 +165,7 @@ func init() {
 		cleanup()
 		os.Exit(1)
 	}()
-}
 
-// Web server
-func main() {
 	// Set the log's output
 	if config.LogFile != "" {
 		logFile, err := os.OpenFile(config.LogFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)

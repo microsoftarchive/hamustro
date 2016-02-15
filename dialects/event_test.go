@@ -33,7 +33,7 @@ func TestConvertEpochIntoIsoformat(t *testing.T) {
 		t.Errorf("Expected timestamp was %s but it was %s instead", exp, ts)
 	}
 
-	t.Log("Converting Unix Nano to UTC isoformat timestamp")
+	t.Log("Converting Unix Micro to UTC isoformat timestamp")
 	if ts := ConvertIsoformat(1454681104000); ts == exp {
 		t.Errorf("Expected timestamp was not %s", ts)
 	}
