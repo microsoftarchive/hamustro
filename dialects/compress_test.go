@@ -5,12 +5,27 @@ import (
 	"compress/gzip"
 	"io"
 	"testing"
+	"time"
 )
 
 func TestRandStringBytes(t *testing.T) {
 	t.Log("Generates 10 length random string.")
 	if s := RandStringBytes(10); len(s) != 10 {
 		t.Errorf("Expected length was 10 but it was %d instead.", len(s))
+	}
+}
+
+func TestResolvePath(t *testing.T) {
+	t.Log("Detecting placeholders in the file path")
+
+	p := ResolvePath("directory/subdirectory")
+	if exp := "directory/subdirectory"; exp != p {
+		t.Errorf("Expected path was %s but it was %s instead", exp, p)
+	}
+
+	p = ResolvePath("directory/{date}")
+	if exp := "directory/" + time.Now().UTC().Format("2006-01-02"); exp != p {
+		t.Errorf("Expected path was %s but it was %s instead", exp, p)
 	}
 }
 
