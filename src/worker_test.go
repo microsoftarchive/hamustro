@@ -4,6 +4,9 @@ import (
 	"./dialects"
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"sync"
 	"testing"
 )
 
@@ -56,17 +59,30 @@ func (c *SimpleStorageClient) Save(msg *bytes.Buffer) error {
 
 // Tests the simple storage client (not buffered) with a single worker
 func TestSimpleStorageClientWorker(t *testing.T) {
+	// Disable the logger
+	log.SetOutput(ioutil.Discard)
+
+	// Define the job Queue and the Simple Storage Client
 	jobQueue = make(chan *Job, 10)
 	storageClient = &SimpleStorageClient{}
+
+	// Make testing.T and the response global
 	T = t
 	sResp = nil
 
+	// Create a worker
 	t.Log("Creating a single worker")
 	pool := make(chan chan *Job, 2)
 	worker := NewWorker(1, 10, pool)
 	worker.RetryAttempt = 2
 	worker.Start()
 
+	// Stop the worker on the end
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer worker.Stop(&wg)
+
+	// Start the test
 	jobChannel := <-pool
 
 	t.Log("Creating a single job and send it to the worker")
@@ -135,5 +151,130 @@ func TestGetId(t *testing.T) {
 
 	if worker.GetId() != 312 {
 		t.Errorf("Expected worker's ID was %d but it was %d instead.", 312, worker.GetId())
+	}
+}
+
+// Buffered Storage Client for testing
+type BufferedStorageClient struct{}
+
+func (c *BufferedStorageClient) IsBufferedStorage() bool {
+	return true
+}
+func (c *BufferedStorageClient) GetConverter() dialects.Converter {
+	return nil
+}
+func (c *BufferedStorageClient) GetBatchConverter() dialects.BatchConverter {
+	return dialects.ConvertBatchJSON
+}
+func (c *BufferedStorageClient) Save(msg *bytes.Buffer) error {
+	if sResp != nil {
+		return sResp
+	}
+	T.Log("Validating received messages within the BufferedStorageClient")
+	if exp.String() != msg.String() {
+		T.Errorf("Expected message was `%s` and it was `%s` instead.", exp, msg)
+	}
+	return nil
+}
+
+// Tests the simple storage client (not buffered) with a single worker
+func TestBufferedStorageClientWorker(t *testing.T) {
+	// Disable the logger
+	log.SetOutput(ioutil.Discard)
+
+	// Define the job Queue and the Buffered Storage Client
+	jobQueue = make(chan *Job, 10)
+	storageClient = &BufferedStorageClient{}
+
+	// Make testing.T and the response global
+	T = t
+	sResp = nil
+
+	// Create a worker
+	t.Log("Creating a single worker")
+	pool := make(chan chan *Job, 2)
+	worker := NewWorker(1, 10, pool)
+	worker.Start()
+
+	// Stop the worker on the end
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer worker.Stop(&wg)
+
+	// Start the test
+	jobChannel := <-pool
+	var job Job
+
+	t.Log("Creating 9 job and send it to the worker")
+	partStr := ""
+	for i := 0; i < 9; i++ {
+		job = Job{GetTestEvent(uint32(56746535 + i)), 1}
+		part, _ := dialects.ConvertJSON(job.Event)
+		partStr += part.String()
+		jobChannel <- &job
+		jobChannel = <-pool
+
+		if exnr := i + 1; len(worker.BufferedEvents) != exnr {
+			t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
+		}
+	}
+
+	t.Log("Creating the 10th job and send it to the worker that will proceed the buffer")
+	job = Job{GetTestEvent(1), 1}
+	part, _ := dialects.ConvertJSON(job.Event)
+	partStr += part.String()
+	exp = bytes.NewBuffer([]byte(partStr))
+	jobChannel <- &job
+	jobChannel = <-pool
+
+	if exnr := 0; len(worker.BufferedEvents) != exnr {
+		t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
+	}
+	if expen := float32(1.0); worker.Penalty != expen {
+		t.Errorf("Expected worker's penalty was %d but it was %d instead", expen, worker.Penalty)
+	}
+	if exnr := 10; worker.GetBufferSize() != exnr {
+		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
+	}
+
+	t.Log("Creating 14 job and send it to the worker, during the process it'll fail after the 10th")
+	sResp = fmt.Errorf("Error was intialized for testing")
+	partStr = ""
+	for i := 0; i < 14; i++ {
+		job = Job{GetTestEvent(uint32(213432 + i)), 1}
+		part, _ := dialects.ConvertJSON(job.Event)
+		partStr += part.String()
+		jobChannel <- &job
+		jobChannel = <-pool
+
+		if exnr := i + 1; len(worker.BufferedEvents) != exnr {
+			t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
+		}
+	}
+
+	if expen := float32(1.5); worker.Penalty != expen {
+		t.Errorf("Expected worker's penalty was %d but it was %d instead", expen, worker.Penalty)
+	}
+	if exnr := 15; worker.GetBufferSize() != exnr {
+		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
+	}
+
+	sResp = nil
+	t.Log("Creating the 15th job and send it to the worker that will proceed the buffer")
+	job = Job{GetTestEvent(1), 1}
+	part, _ = dialects.ConvertJSON(job.Event)
+	partStr += part.String()
+	exp = bytes.NewBuffer([]byte(partStr))
+	jobChannel <- &job
+	jobChannel = <-pool
+
+	if exnr := 0; len(worker.BufferedEvents) != exnr {
+		t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
+	}
+	if expen := float32(1.0); worker.Penalty != expen {
+		t.Errorf("Expected worker's penalty was %d but it was %d instead", expen, worker.Penalty)
+	}
+	if exnr := 10; worker.GetBufferSize() != exnr {
+		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
 	}
 }

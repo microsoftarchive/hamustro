@@ -133,9 +133,14 @@ func (w *Worker) IncreasePenalty() {
 	w.Penalty *= 1.5
 }
 
+// Returns the current buffer size with the current penalty
+func (w *Worker) GetBufferSize() int {
+	return int(float32(w.BufferSize) * w.Penalty)
+}
+
 // Checks the state of the buffer
 func (w *Worker) IsBufferFull() bool {
-	return len(w.BufferedEvents) >= int(float32(w.BufferSize)*w.Penalty)
+	return len(w.BufferedEvents) >= w.GetBufferSize()
 }
 
 // Resets the buffer
