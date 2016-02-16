@@ -4,7 +4,6 @@ import (
 	"./dialects"
 	"bytes"
 	"fmt"
-	"sync"
 	"testing"
 )
 
@@ -123,9 +122,6 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	if len(jobQueue) != 0 {
 		t.Errorf("jobQueue have to be empty because it was dropped after the 2nd attempt")
 	}
-
-	var wg sync.WaitGroup
-	worker.Stop(&wg)
 }
 
 // Worker Id testing

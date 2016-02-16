@@ -28,6 +28,7 @@ var verbose bool
 var isTerminating = false
 var dispatcher *Dispatcher
 var JobQueue chan Job
+var Version string = "1.0dev" // Current version
 
 // Returns the request's signature
 func GetSignature(body []byte, time string) string {
@@ -134,6 +135,9 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
+
+	// Set a prefix for the logger
+	log.SetPrefix(fmt.Sprintf("hamustro-%s ", Version))
 
 	// Read and parse the configuration file
 	config = NewConfig(*filename)

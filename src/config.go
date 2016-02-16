@@ -11,13 +11,12 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 )
 
 // Application configuration
 type Config struct {
-	Host             string     `json:"host"`
-	Port             string     `json:"port"`
 	LogFile          string     `json:"logfile"`
 	Dialect          string     `json:"dialect"`
 	MaxWorkerSize    int        `json:"max_worker_size"`
@@ -53,7 +52,7 @@ func (c *Config) GetMaxWorkerSize() int {
 	if c.MaxWorkerSize != 0 {
 		return c.MaxWorkerSize
 	}
-	return 5
+	return runtime.NumCPU() + 1
 }
 
 // Returns the maximum queue size
@@ -65,7 +64,7 @@ func (c *Config) GetMaxQueueSize() int {
 	if c.MaxQueueSize != 0 {
 		return c.MaxQueueSize
 	}
-	return 100
+	return c.GetMaxWorkerSize() * 20
 }
 
 // Returns the port of the application
