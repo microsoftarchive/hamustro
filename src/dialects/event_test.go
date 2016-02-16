@@ -26,6 +26,7 @@ func GetTestEvent(userId uint32) *Event {
 		IsTesting:      false}
 }
 
+// Converts an EPOCH timestamp to UTC isoformat timestamp
 func TestConvertEpochIntoIsoformat(t *testing.T) {
 	t.Log("Converting EPOCH timestamp to UTC isoformat timestamp")
 	exp := "2016-02-05 15:05:04"
@@ -44,6 +45,7 @@ func TestConvertEpochIntoIsoformat(t *testing.T) {
 	}
 }
 
+// Converts and Event into a list of string
 func TestEventStringConversion(t *testing.T) {
 	t.Log("Converting Event into a list of strings")
 	e := GetTestEvent(97421193)
@@ -67,6 +69,7 @@ func TestEventStringConversion(t *testing.T) {
 	}
 }
 
+// Tests the Events creation from a Collection.
 func TestNewEventCreation(t *testing.T) {
 	t.Log("Creating a new Event object from Payload and Collection")
 	p := payload.Payload{

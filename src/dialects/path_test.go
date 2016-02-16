@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Generates a random string to usa as a part of a filename
 func TestRandStringBytes(t *testing.T) {
 	t.Log("Generates 10 length random string.")
 	if s := RandStringBytes(10); len(s) != 10 {
@@ -12,6 +13,7 @@ func TestRandStringBytes(t *testing.T) {
 	}
 }
 
+// Replacing the predefined placeholders in the filepath
 func TestResolvePath(t *testing.T) {
 	t.Log("Detecting placeholders in the file path")
 
@@ -26,6 +28,7 @@ func TestResolvePath(t *testing.T) {
 	}
 }
 
+// Generates a random filepath for a single file
 func TestGetRandomPath(t *testing.T) {
 	t.Log("Generates random file name, for `csv` extension")
 

@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// Returns a Converter function for a single Event conversion
 func TestGetConverterFunction(t *testing.T) {
 	t.Log("Returns a Converter functions for single Event conversion")
 
@@ -41,6 +42,7 @@ func TestGetConverterFunction(t *testing.T) {
 	}
 }
 
+// Returns a BatchConverter functions for multiple Event conversion
 func TestGetBatchConverterFunction(t *testing.T) {
 	t.Log("Returns a BatchConverter functions for multiple Event conversion")
 
@@ -75,6 +77,7 @@ func TestGetBatchConverterFunction(t *testing.T) {
 	}
 }
 
+// Converting a single event to CSV
 func TestConvertCSV(t *testing.T) {
 	t.Log("Converting a single event to CSV to check")
 	event := GetTestEvent(97421193)
@@ -87,6 +90,7 @@ func TestConvertCSV(t *testing.T) {
 	}
 }
 
+// Converting a single event to JSON
 func TestConvertJSON(t *testing.T) {
 	t.Log("Converting a single event to JSON and back to check integrity")
 	event := GetTestEvent(97421193)
@@ -107,6 +111,7 @@ func TestConvertJSON(t *testing.T) {
 	}
 }
 
+// Converting multiple events to CSV
 func TestConvertBatchCSV(t *testing.T) {
 	t.Log("Converting a 3 events to CSV to check")
 
@@ -124,6 +129,7 @@ func TestConvertBatchCSV(t *testing.T) {
 	}
 }
 
+// Converting multiple events to JSON
 func TestConvertBatchJSON(t *testing.T) {
 	t.Log("Converting a 3 events to JSON to check")
 

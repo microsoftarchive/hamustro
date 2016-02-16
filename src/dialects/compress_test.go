@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// Compressing a string and decompress it to check the validity of the function
 func TestCompress(t *testing.T) {
 	t.Log("Compressing the string `hamustro`")
 	b := new(bytes.Buffer)
