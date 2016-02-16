@@ -141,6 +141,9 @@ func main() {
 
 	// Read and parse the configuration file
 	config = NewConfig(*filename)
+	if !config.IsValid() {
+		log.Fatalf("Config is incomplete, please define `dialect` and `shared_secret` property")
+	}
 	dialect, err := config.DialectConfig()
 	if err != nil {
 		log.Fatalf("Loading dialect configuration is failed: %s", err.Error())
@@ -157,7 +160,7 @@ func main() {
 
 	// Create the background workers
 	jobQueue = make(chan *Job, config.GetMaxQueueSize())
-	dispatcher = NewDispatcher(config.GetMaxWorkerSize(), config.BufferSize, config.SpreadBufferSize)
+	dispatcher = NewDispatcher(config.GetMaxWorkerSize(), config.GetBufferSize(), config.IsSpreadBuffer())
 	dispatcher.Run()
 
 	// Capture SIGINT and SIGTERM events to finish the ongoing work

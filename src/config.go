@@ -13,6 +13,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 )
 
 // Application configuration
@@ -41,6 +42,11 @@ func NewConfig(filename string) *Config {
 		log.Fatal(err)
 	}
 	return &config
+}
+
+// Configuration validation
+func (c *Config) IsValid() bool {
+	return c.Dialect != "" && c.SharedSecret != ""
 }
 
 // Returns the maximum worker size
@@ -88,9 +94,22 @@ func (c *Config) GetAddress() string {
 	return c.GetHost() + ":" + c.GetPort()
 }
 
+// Returns the default buffer size for Buffered Storage.
+func (c *Config) GetBufferSize() int {
+	if c.BufferSize != 0 {
+		return c.BufferSize
+	}
+	return (c.GetMaxWorkerSize() * c.GetMaxQueueSize()) * 10
+}
+
+// Returns the default spreding property
+func (c *Config) IsSpreadBuffer() bool {
+	return c.SpreadBufferSize
+}
+
 // Returns the selected dialect's configuration object
 func (c *Config) DialectConfig() (dialects.Dialect, error) {
-	switch c.Dialect {
+	switch strings.ToLower(c.Dialect) {
 	case "aqs":
 		return &c.AQS, nil
 	case "sns":

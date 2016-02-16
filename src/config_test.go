@@ -6,8 +6,25 @@ import (
 	"testing"
 )
 
-// Testing a configuration loading from a file
+// TODO: Testing a configuration loading from a file
 func TestNewConfig(t *testing.T) {
+}
+
+// Testing the configuration file is valid or not
+func TestIsValid(t *testing.T) {
+	t.Log("Testing configs")
+	config := &Config{}
+	if config.IsValid() {
+		t.Errorf("Config without `shared_secret` and `dialect` can not be valid")
+	}
+	config = &Config{Dialect: "sth"}
+	if config.IsValid() == true {
+		t.Errorf("Config without `shared_secret` can not be valid")
+	}
+	config = &Config{SharedSecret: "ultrasafesecret"}
+	if config.IsValid() == true {
+		t.Errorf("Config without `dialect` can not be valid")
+	}
 }
 
 // Testing worker size calculation
@@ -95,7 +112,53 @@ func TestGetAddress(t *testing.T) {
 	}
 }
 
+// Testing the buffer size calculation for buffered storage
+func TestGetBufferSize(t *testing.T) {
+	t.Log("Testing the buffer size calculations")
+	config := &Config{}
+	if exp := ((runtime.NumCPU() + 1) * (runtime.NumCPU() + 1) * 20) * 10; config.GetBufferSize() != exp {
+		t.Errorf("Expected buffer size was %d but it was %d instead", exp, config.GetBufferSize())
+	}
+	config = &Config{BufferSize: 100000}
+	if exp := 100000; config.GetBufferSize() != exp {
+		t.Errorf("Expected buffer size was %d but it was %d instead", exp, config.GetBufferSize())
+	}
+}
+
+// Testing the spreading property
+func TestIsSpreadBuffer(t *testing.T) {
+	t.Log("Testing the spreading property for buffered storage")
+	config := &Config{}
+	if exp := false; config.IsSpreadBuffer() != exp {
+		t.Errorf("Expected spreading buffer %s but it was %s instead", exp, config.IsSpreadBuffer())
+	}
+	config = &Config{SpreadBufferSize: false}
+	if exp := false; config.IsSpreadBuffer() != exp {
+		t.Errorf("Expected spreading buffer %s but it was %s instead", exp, config.IsSpreadBuffer())
+	}
+	config = &Config{SpreadBufferSize: true}
+	if exp := true; config.IsSpreadBuffer() != exp {
+		t.Errorf("Expected spreading buffer %s but it was %s instead", exp, config.IsSpreadBuffer())
+	}
+}
+
 // Testing the dialect determination
 func TestDialectConfig(t *testing.T) {
+	t.Log("Testing dialect selector when dialect is not exists")
+	config := &Config{Dialect: "hohoho"}
+	if _, err := config.DialectConfig(); err == nil {
+		t.Errorf("Not existing dialect should raise an error")
+	}
 
+	t.Log("Testing dialect selector when existing dialect is lowercase")
+	config = &Config{Dialect: "aqs"}
+	if _, err := config.DialectConfig(); err != nil {
+		t.Errorf("Existing dialect must be found when lowercase")
+	}
+
+	t.Log("Testing dialect selector when existing dialect is uppercase")
+	config = &Config{Dialect: "AQS"}
+	if _, err := config.DialectConfig(); err != nil {
+		t.Errorf("Existing dialect must be found when uppercase")
+	}
 }

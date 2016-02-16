@@ -122,7 +122,7 @@ func (w *Worker) Stop(wg *sync.WaitGroup) {
 		if storageClient.IsBufferedStorage() {
 			log.Printf("(%d worker) Sending stop signal to worker with %d buffered events", w.ID, len(w.BufferedEvents))
 		} else {
-			log.Printf("(%d worker) Sending stop signal to worker", w.ID, len(w.BufferedEvents))
+			log.Printf("(%d worker) Sending stop signal to worker", w.ID)
 		}
 		w.quit <- wg
 	}()
