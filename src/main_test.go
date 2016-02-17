@@ -30,7 +30,7 @@ func GetTestCollection(userId uint32) *payload.Collection {
 }
 
 // Generates a signature for a given string and an EPOCH timestamp
-func TestGetSignature(t *testing.T) {
+func TestFunctionGetSignature(t *testing.T) {
 	t.Log("Generating signature for a string.")
 	config = &Config{SharedSecret: "ultrasafesecret"}
 
@@ -41,7 +41,7 @@ func TestGetSignature(t *testing.T) {
 }
 
 // Generates a session identifier for a payload
-func TestGetSession(t *testing.T) {
+func TestFunctionGetSession(t *testing.T) {
 	t.Log("Generating a session for a payload's collection.")
 	collection := GetTestCollection(97421193)
 	if exp := "244f056dee6d475ec673ea0d20b69bab"; GetSession(collection) != exp {

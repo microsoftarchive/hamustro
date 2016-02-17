@@ -108,6 +108,7 @@ func (w *Worker) Start() {
 						log.Printf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 						return
 					}
+					w.ResetBuffer()
 				}
 				log.Printf("(%d worker) Stopped successfully", w.ID)
 				return

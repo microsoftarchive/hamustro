@@ -7,11 +7,11 @@ import (
 )
 
 // TODO: Testing a configuration loading from a file
-func TestNewConfig(t *testing.T) {
+func TestFunctionNewConfig(t *testing.T) {
 }
 
 // Testing the configuration file is valid or not
-func TestIsValid(t *testing.T) {
+func TestFunctionIsValid(t *testing.T) {
 	t.Log("Testing configs")
 	config := &Config{}
 	if config.IsValid() {
@@ -28,7 +28,7 @@ func TestIsValid(t *testing.T) {
 }
 
 // Testing worker size calculation
-func TestGetMaxWorkerSize(t *testing.T) {
+func TestFunctionGetMaxWorkerSize(t *testing.T) {
 	t.Log("Testing worker size initialization")
 	config := &Config{MaxWorkerSize: 0}
 	if r := config.GetMaxWorkerSize(); r != runtime.NumCPU()+1 {
@@ -46,7 +46,7 @@ func TestGetMaxWorkerSize(t *testing.T) {
 }
 
 // Testing queue size calculation
-func TestGetMaxQueueSize(t *testing.T) {
+func TestFunctionGetMaxQueueSize(t *testing.T) {
 	t.Log("Testing queue size initialization")
 	config := &Config{MaxQueueSize: 0}
 	if r := config.GetMaxQueueSize(); r != (runtime.NumCPU()+1)*20 {
@@ -64,7 +64,7 @@ func TestGetMaxQueueSize(t *testing.T) {
 }
 
 // Testing port determination
-func TestGetPort(t *testing.T) {
+func TestFunctionGetPort(t *testing.T) {
 	t.Log("Testing port initialization")
 	config := &Config{}
 	if r := config.GetPort(); r != "8080" {
@@ -78,7 +78,7 @@ func TestGetPort(t *testing.T) {
 }
 
 // Testing host determination
-func TestGetHost(t *testing.T) {
+func TestFunctionGetHost(t *testing.T) {
 	t.Log("Testing host initialization")
 	config := &Config{}
 	if r := config.GetHost(); r != "localhost" {
@@ -92,7 +92,7 @@ func TestGetHost(t *testing.T) {
 }
 
 // Testing address determination
-func TestGetAddress(t *testing.T) {
+func TestFunctionGetAddress(t *testing.T) {
 	t.Log("Testing address initialization")
 	config := &Config{}
 	if r := config.GetAddress(); r != "localhost:8080" {
@@ -113,7 +113,7 @@ func TestGetAddress(t *testing.T) {
 }
 
 // Testing the buffer size calculation for buffered storage
-func TestGetBufferSize(t *testing.T) {
+func TestFunctionGetBufferSize(t *testing.T) {
 	t.Log("Testing the buffer size calculations")
 	config := &Config{}
 	if exp := ((runtime.NumCPU() + 1) * (runtime.NumCPU() + 1) * 20) * 10; config.GetBufferSize() != exp {
@@ -126,7 +126,7 @@ func TestGetBufferSize(t *testing.T) {
 }
 
 // Testing the spreading property
-func TestIsSpreadBuffer(t *testing.T) {
+func TestFunctionIsSpreadBuffer(t *testing.T) {
 	t.Log("Testing the spreading property for buffered storage")
 	config := &Config{}
 	if exp := false; config.IsSpreadBuffer() != exp {
@@ -143,7 +143,7 @@ func TestIsSpreadBuffer(t *testing.T) {
 }
 
 // Testing the dialect determination
-func TestDialectConfig(t *testing.T) {
+func TestFunctionDialectConfig(t *testing.T) {
 	t.Log("Testing dialect selector when dialect is not exists")
 	config := &Config{Dialect: "hohoho"}
 	if _, err := config.DialectConfig(); err == nil {

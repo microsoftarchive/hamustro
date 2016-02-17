@@ -15,25 +15,6 @@ var T *testing.T
 var exp *bytes.Buffer
 var sResp error = nil
 
-// Returns an Event for testing purposes
-func GetTestEvent(userId uint32) *dialects.Event {
-	return &dialects.Event{
-		DeviceID:       "a73b1c37-2c24-4786-af7a-16de88fbe23a",
-		ClientID:       "bce44f67b2661fd445d469b525b04f68",
-		Session:        "244f056dee6d475ec673ea0d20b69bab",
-		Nr:             1,
-		SystemVersion:  "10.10",
-		ProductVersion: "1.1.2",
-		At:             "2016-02-05T15:05:04",
-		Event:          "Client.CreateUser",
-		System:         "OSX",
-		ProductGitHash: "5416a5889392d509e3bafcf40f6388e83aab23e6",
-		UserID:         userId,
-		IP:             "214.160.227.22",
-		Parameters:     "",
-		IsTesting:      false}
-}
-
 // Simple (not buffered) Storage Client for testing
 type SimpleStorageClient struct{}
 
@@ -55,6 +36,102 @@ func (c *SimpleStorageClient) Save(msg *bytes.Buffer) error {
 		T.Errorf("Expected message was `%s` and it was `%s` instead.", exp, msg)
 	}
 	return nil
+}
+
+// Buffered Storage Client for testing
+type BufferedStorageClient struct{}
+
+func (c *BufferedStorageClient) IsBufferedStorage() bool {
+	return true
+}
+func (c *BufferedStorageClient) GetConverter() dialects.Converter {
+	return nil
+}
+func (c *BufferedStorageClient) GetBatchConverter() dialects.BatchConverter {
+	return dialects.ConvertBatchJSON
+}
+func (c *BufferedStorageClient) Save(msg *bytes.Buffer) error {
+	if sResp != nil {
+		return sResp
+	}
+	T.Log("Validating received messages within the BufferedStorageClient")
+	if exp.String() != msg.String() {
+		T.Errorf("Expected message was `%s` and it was `%s` instead.", exp, msg)
+	}
+	return nil
+}
+
+// Worker Id testing with NewWorker
+func TestFunctionGetIdAndNewWorker(t *testing.T) {
+	jobQueue = make(chan *Job, 10)
+	storageClient = &SimpleStorageClient{}
+
+	t.Log("Creating a worker with 312 id")
+	pool := make(chan chan *Job, 1)
+	worker := NewWorker(312, 10, pool)
+
+	if worker.GetId() != 312 {
+		t.Errorf("Expected worker's ID was %d but it was %d instead.", 312, worker.GetId())
+	}
+}
+
+// Increase Penalty test and buffer size calculation
+func TestFunctionIncreasePenaltyAndGetBufferSize(t *testing.T) {
+	t.Log("Increasing penalty")
+	worker := &Worker{BufferSize: 100, Penalty: 1.0}
+	if exbs := 100; worker.GetBufferSize() != exbs {
+		t.Errorf("Expected buffer size was %d but it was %d instead", exp, worker.GetBufferSize())
+	}
+	worker.IncreasePenalty()
+	if exp := float32(1.5); worker.Penalty != exp {
+		t.Errorf("Expected penalty was %f but it was %f instead", exp, worker.Penalty)
+	}
+	if exbs := 150; worker.GetBufferSize() != exbs {
+		t.Errorf("Expected buffer size was %d but it was %d instead", exp, worker.GetBufferSize())
+	}
+	worker.IncreasePenalty()
+	if exp := float32(2.25); worker.Penalty != exp {
+		t.Errorf("Expected penalty was %f but it was %f instead", exp, worker.Penalty)
+	}
+	if exbs := 225; worker.GetBufferSize() != exbs {
+		t.Errorf("Expected buffer size was %d but it was %d instead", exp, worker.GetBufferSize())
+	}
+	t.Log("Reset the buffer")
+	worker.ResetBuffer()
+	if exp := float32(1.0); worker.Penalty != exp {
+		t.Errorf("Expected penalty was %f but it was %f instead", exp, worker.Penalty)
+	}
+	if exbs := 100; worker.GetBufferSize() != exbs {
+		t.Errorf("Expected buffer size was %d but it was %d instead", exp, worker.GetBufferSize())
+	}
+}
+
+// Tests the buffer full condition and adding events to the buffer
+func TestFunctionBufferFullAndAddEventToBuffer(t *testing.T) {
+	// TODO: IsBufferFull()
+	// TODO: ResetBuffer()
+	// TODO: AddEventsToBuffer
+	t.Log("Adding events to the buffer")
+	// worker := &Worker{BufferSize: 2, Penalty: 1.0}
+}
+
+// Returns an Event for testing purposes
+func GetTestEvent(userId uint32) *dialects.Event {
+	return &dialects.Event{
+		DeviceID:       "a73b1c37-2c24-4786-af7a-16de88fbe23a",
+		ClientID:       "bce44f67b2661fd445d469b525b04f68",
+		Session:        "244f056dee6d475ec673ea0d20b69bab",
+		Nr:             1,
+		SystemVersion:  "10.10",
+		ProductVersion: "1.1.2",
+		At:             "2016-02-05T15:05:04",
+		Event:          "Client.CreateUser",
+		System:         "OSX",
+		ProductGitHash: "5416a5889392d509e3bafcf40f6388e83aab23e6",
+		UserID:         userId,
+		IP:             "214.160.227.22",
+		Parameters:     "",
+		IsTesting:      false}
 }
 
 // Tests the simple storage client (not buffered) with a single worker
@@ -140,43 +217,6 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	}
 }
 
-// Worker Id testing
-func TestGetId(t *testing.T) {
-	jobQueue = make(chan *Job, 10)
-	storageClient = &SimpleStorageClient{}
-
-	t.Log("Creating a worker with 312 id")
-	pool := make(chan chan *Job, 1)
-	worker := NewWorker(312, 10, pool)
-
-	if worker.GetId() != 312 {
-		t.Errorf("Expected worker's ID was %d but it was %d instead.", 312, worker.GetId())
-	}
-}
-
-// Buffered Storage Client for testing
-type BufferedStorageClient struct{}
-
-func (c *BufferedStorageClient) IsBufferedStorage() bool {
-	return true
-}
-func (c *BufferedStorageClient) GetConverter() dialects.Converter {
-	return nil
-}
-func (c *BufferedStorageClient) GetBatchConverter() dialects.BatchConverter {
-	return dialects.ConvertBatchJSON
-}
-func (c *BufferedStorageClient) Save(msg *bytes.Buffer) error {
-	if sResp != nil {
-		return sResp
-	}
-	T.Log("Validating received messages within the BufferedStorageClient")
-	if exp.String() != msg.String() {
-		T.Errorf("Expected message was `%s` and it was `%s` instead.", exp, msg)
-	}
-	return nil
-}
-
 // Tests the simple storage client (not buffered) with a single worker
 func TestBufferedStorageClientWorker(t *testing.T) {
 	// Disable the logger
@@ -195,11 +235,6 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	pool := make(chan chan *Job, 2)
 	worker := NewWorker(1, 10, pool)
 	worker.Start()
-
-	// Stop the worker on the end
-	var wg sync.WaitGroup
-	wg.Add(1)
-	defer worker.Stop(&wg)
 
 	// Start the test
 	jobChannel := <-pool
@@ -276,5 +311,25 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	}
 	if exnr := 10; worker.GetBufferSize() != exnr {
 		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
+	}
+
+	t.Log("Creating a single job and send it to the worker that will stay in the buffer until the worker stops")
+	job = Job{GetTestEvent(1), 1}
+	exp, _ = dialects.ConvertJSON(job.Event)
+	jobChannel <- &job
+	jobChannel = <-pool
+
+	if exnr := 1; len(worker.BufferedEvents) != exnr {
+		t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
+	}
+
+	// Stop the worker on the end
+	var wg sync.WaitGroup
+	wg.Add(1)
+	worker.Stop(&wg)
+	wg.Wait()
+
+	if exnr := 0; len(worker.BufferedEvents) != exnr {
+		t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
 	}
 }

@@ -5,7 +5,7 @@ import (
 )
 
 // Testing the MarkAsFailed function's behaviour
-func TestMarkAsFailed(t *testing.T) {
+func TestFunctionMarkAsFailed(t *testing.T) {
 	t.Log("Testing mark as failed behaviour for jobs")
 	jobQueue = make(chan *Job, 10)
 	job := &Job{GetTestEvent(3423897841), 1}
