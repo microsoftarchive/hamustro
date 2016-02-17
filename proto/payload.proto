@@ -1,5 +1,7 @@
 syntax = "proto2";
 
+option objc_class_prefix = "HAM";
+
 message Payload {
   required uint64 at = 1;
   required string event = 2;
