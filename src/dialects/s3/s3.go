@@ -82,7 +82,7 @@ func (c *S3Storage) GetBatchConverter() dialects.BatchConverter {
 }
 
 // Publish a single Event to SNS topic.
-func (c *S3Storage) Save(workerID int, msg *bytes.Buffer) error {
+func (c *S3Storage) Save(msg *bytes.Buffer) error {
 	buffer, err := dialects.Compress(msg)
 	if err != nil {
 		return err

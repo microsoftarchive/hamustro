@@ -84,7 +84,7 @@ func (w *Worker) Work(job *Job) error {
 		}
 
 		// Save message immediately.
-		if err := storageClient.Save(w.ID, msg); err != nil {
+		if err := storageClient.Save(msg); err != nil {
 			rerr := fmt.Errorf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
 			job.MarkAsFailed(w.RetryAttempt)
 			return rerr
@@ -105,7 +105,7 @@ func (w *Worker) Work(job *Job) error {
 			return fmt.Errorf("(%d worker) Batch converting buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 		}
 		// Save messages
-		if err := storageClient.Save(w.ID, msg); err != nil {
+		if err := storageClient.Save(msg); err != nil {
 			w.IncreasePenalty()
 			return fmt.Errorf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 		}
@@ -128,7 +128,7 @@ func (w *Worker) Rescue() error {
 			return fmt.Errorf("(%d worker) Batch converting buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 		}
 		// Save messages
-		if err := storageClient.Save(w.ID, msg); err != nil {
+		if err := storageClient.Save(msg); err != nil {
 			return fmt.Errorf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 		}
 		w.ResetBuffer()

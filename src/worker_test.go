@@ -13,8 +13,8 @@ import (
 
 // Global variables for testing (hacky)
 var T *testing.T
-var exp map[int]*bytes.Buffer
-var sResp error = nil
+var exp map[string]struct{}
+var response error = nil
 var catched bool = false
 
 // Simple (not buffered) Storage Client for testing
@@ -29,15 +29,18 @@ func (c *SimpleStorageClient) GetConverter() dialects.Converter {
 func (c *SimpleStorageClient) GetBatchConverter() dialects.BatchConverter {
 	return nil
 }
-func (c *SimpleStorageClient) Save(workerID int, msg *bytes.Buffer) error {
+func (c *SimpleStorageClient) Save(msg *bytes.Buffer) error {
 	catched = true
-	if sResp != nil {
-		return sResp
+	if response != nil {
+		return response
 	}
 	time.Sleep(100 * time.Millisecond)
-	T.Logf("(%d worker) Validating received message within the SimpleStorageClient", workerID)
-	if exp[workerID].String() != msg.String() {
-		T.Errorf("(%d worker) Expected message was `%s` and it was `%s` instead.", workerID, exp[workerID], msg)
+	T.Logf("(%d worker) Validating received message within the SimpleStorageClient")
+	msgString := msg.String()
+	if _, ok := exp[msgString]; !ok {
+		T.Errorf("Expected message was not %s", msgString)
+	} else {
+		delete(exp, msgString)
 	}
 	return nil
 }
@@ -54,15 +57,18 @@ func (c *BufferedStorageClient) GetConverter() dialects.Converter {
 func (c *BufferedStorageClient) GetBatchConverter() dialects.BatchConverter {
 	return dialects.ConvertBatchJSON
 }
-func (c *BufferedStorageClient) Save(workerID int, msg *bytes.Buffer) error {
+func (c *BufferedStorageClient) Save(msg *bytes.Buffer) error {
 	catched = true
-	if sResp != nil {
-		return sResp
+	if response != nil {
+		return response
 	}
 	time.Sleep(100 * time.Millisecond)
-	T.Logf("(%d worker) Validating received messages within the BufferedStorageClient", workerID)
-	if exp[workerID].String() != msg.String() {
-		T.Errorf("(%d worker) Expected message was `%s` and it was `%s` instead.", workerID, exp[workerID], msg)
+	T.Logf("Validating received messages within the BufferedStorageClient")
+	msgString := msg.String()
+	if _, ok := exp[msgString]; !ok {
+		T.Errorf("Expected message was not %s", msgString)
+	} else {
+		delete(exp, msgString)
 	}
 	return nil
 }
@@ -157,8 +163,6 @@ func GetTestEvent(userId uint32) *dialects.Event {
 
 // Tests the simple storage client (not buffered) with a single worker
 func TestSimpleStorageClientWorker(t *testing.T) {
-	exp = make(map[int]*bytes.Buffer)
-
 	// Disable the logger
 	log.SetOutput(ioutil.Discard)
 
@@ -168,7 +172,7 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 
 	// Make testing.T and the response global
 	T = t
-	sResp = nil
+	response = nil
 	catched = false
 
 	// Create a worker
@@ -188,7 +192,7 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	t.Log("Creating a single job and send it to the worker")
 	job := Job{GetTestEvent(3423543), 1}
 	expBuffer, _ := dialects.ConvertJSON(job.Event)
-	exp[worker.ID] = expBuffer
+	exp = map[string]struct{}{expBuffer.String(): {}}
 	jobChannel <- &job
 	jobChannel = <-pool
 
@@ -200,7 +204,7 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	t.Log("Creating an another single job and send it to the worker")
 	job = Job{GetTestEvent(1321), 1}
 	expBuffer, _ = dialects.ConvertJSON(job.Event)
-	exp[worker.ID] = expBuffer
+	exp = map[string]struct{}{expBuffer.String(): {}}
 	jobChannel <- &job
 	jobChannel = <-pool
 
@@ -210,10 +214,10 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	catched = false
 
 	t.Log("Send something that will fail and raise an error")
-	sResp = fmt.Errorf("Error was intialized for testing")
+	response = fmt.Errorf("Error was intialized for testing")
 	job = Job{GetTestEvent(43233), 1}
 	expBuffer, _ = dialects.ConvertJSON(job.Event)
-	exp[worker.ID] = expBuffer
+	exp = map[string]struct{}{expBuffer.String(): {}}
 	jobChannel <- &job
 	jobChannel = <-pool
 
@@ -230,7 +234,7 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 		t.Errorf("jobChannel doesn't contain the previous job")
 	}
 	jobq := <-jobQueue
-	sResp = nil
+	response = nil
 	jobChannel <- jobq
 	jobChannel = <-pool
 
@@ -240,10 +244,10 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	catched = false
 
 	t.Log("Send something that will fail and raise an error again")
-	sResp = fmt.Errorf("Error was intialized for testing")
+	response = fmt.Errorf("Error was intialized for testing")
 	job = Job{GetTestEvent(43254534), 1}
 	expBuffer, _ = dialects.ConvertJSON(job.Event)
-	exp[worker.ID] = expBuffer
+	exp = map[string]struct{}{expBuffer.String(): {}}
 	jobChannel <- &job
 	jobChannel = <-pool
 
@@ -273,8 +277,6 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 
 // Tests the simple storage client (not buffered) with a single worker
 func TestBufferedStorageClientWorker(t *testing.T) {
-	exp = make(map[int]*bytes.Buffer)
-
 	// Disable the logger
 	log.SetOutput(ioutil.Discard)
 
@@ -284,7 +286,7 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 
 	// Make testing.T and the response global
 	T = t
-	sResp = nil
+	response = nil
 	catched = false
 
 	// Create a worker
@@ -315,7 +317,7 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	job = Job{GetTestEvent(1), 1}
 	part, _ := dialects.ConvertJSON(job.Event)
 	partStr += part.String()
-	exp[worker.ID] = bytes.NewBuffer([]byte(partStr))
+	exp = map[string]struct{}{partStr: {}}
 	jobChannel <- &job
 	jobChannel = <-pool
 
@@ -334,7 +336,7 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	catched = false
 
 	t.Log("Creating 14 job and send it to the worker, during the process it'll fail after the 10th")
-	sResp = fmt.Errorf("Error was intialized for testing")
+	response = fmt.Errorf("Error was intialized for testing")
 	partStr = ""
 	for i := 0; i < 14; i++ {
 		job = Job{GetTestEvent(uint32(213432 + i)), 1}
@@ -355,12 +357,12 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
 	}
 
-	sResp = nil
+	response = nil
 	t.Log("Creating the 15th job and send it to the worker that will proceed the buffer")
 	job = Job{GetTestEvent(1), 1}
 	part, _ = dialects.ConvertJSON(job.Event)
 	partStr += part.String()
-	exp[worker.ID] = bytes.NewBuffer([]byte(partStr))
+	exp = map[string]struct{}{partStr: {}}
 	jobChannel <- &job
 	jobChannel = <-pool
 
@@ -381,7 +383,7 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	t.Log("Creating a single job and send it to the worker that will stay in the buffer until the worker stops")
 	job = Job{GetTestEvent(1), 1}
 	expBuffer, _ := dialects.ConvertJSON(job.Event)
-	exp[worker.ID] = expBuffer
+	exp = map[string]struct{}{expBuffer.String(): {}}
 	jobChannel <- &job
 	jobChannel = <-pool
 
@@ -406,7 +408,6 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 
 // Multiple worker tests
 func TestMultipleWorker(t *testing.T) {
-	exp = make(map[int]*bytes.Buffer)
 	t.Log("Testing multiple worker's behaviour")
 
 	// Disable the logger
@@ -418,7 +419,7 @@ func TestMultipleWorker(t *testing.T) {
 
 	// Make testing.T and the response global
 	T = t
-	sResp = nil
+	response = nil
 	catched = false
 
 	// Create a worker
@@ -441,11 +442,11 @@ func TestMultipleWorker(t *testing.T) {
 	// Create two jobs and send it to channels
 	job1 := Job{GetTestEvent(1262473173), 1}
 	expBuffer1, _ := dialects.ConvertJSON(job1.Event)
-	exp[w1.ID] = expBuffer1
 
 	job2 := Job{GetTestEvent(53484332), 1}
 	expBuffer2, _ := dialects.ConvertJSON(job2.Event)
-	exp[w2.ID] = expBuffer2
+
+	exp = map[string]struct{}{expBuffer1.String(): {}, expBuffer2.String(): {}}
 
 	// It should catch a different worker with the expected results
 	jobChannel = <-pool

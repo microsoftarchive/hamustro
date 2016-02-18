@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/sub-ninja/hamustro/src/dialects"
 	"io/ioutil"
 	"log"
@@ -105,7 +104,6 @@ func TestFunctionDispatcherGetBufferSize(t *testing.T) {
 // Testing the dispatcher listen function
 func TestDispatcherListen(t *testing.T) {
 	t.Log("Testing the dispatcher listen function")
-	exp = make(map[int]*bytes.Buffer)
 
 	// Define the job Queue and the Buffered Storage Client
 	storageClient = &SimpleStorageClient{}
@@ -116,7 +114,7 @@ func TestDispatcherListen(t *testing.T) {
 
 	// Testing responses
 	T = t
-	sResp = nil
+	response = nil
 	catched = false
 
 	// Creates the dispatcher and listen for new jobs
@@ -132,11 +130,11 @@ func TestDispatcherListen(t *testing.T) {
 	t.Log("Creating two jobs and put it into the job queue")
 	job1 := Job{GetTestEvent(423432), 1}
 	expBuffer1, _ := dialects.ConvertJSON(job1.Event)
-	exp[0] = expBuffer1
 
 	job2 := Job{GetTestEvent(7643329), 1}
 	expBuffer2, _ := dialects.ConvertJSON(job2.Event)
-	exp[1] = expBuffer2
+
+	exp = map[string]struct{}{expBuffer1.String(): {}, expBuffer2.String(): {}}
 
 	// It should catch a different worker with the expected results
 	jobQueue <- &job1

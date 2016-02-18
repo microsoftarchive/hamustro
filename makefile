@@ -69,7 +69,7 @@ profile/heap: profile/
 	go tool pprof --pdf hamustro $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/heap > $@.pdf
 
 tests/run: $(GOPATH)/src/github.com/sub-ninja/hamustro
-	go test -v ./...
+	go test -v -cover ./...
 
 tests/send:
 	$(PYC) utils/send_single_message.py $(HAMUSTRO_CONFIG) "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
