@@ -14,7 +14,9 @@ ifndef HAMUSTRO_CONFIG
   HAMUSTRO_CONFIG:=$(warning Please define HAMUSTRO_CONFIG environment variable, using "config/config.json.sample")config/config.json.sample
 endif
 
-PYC:=python
+ifndef PYC
+	PYC:=python
+endif
 
 all:
 	@echo "Please specify a target!"
