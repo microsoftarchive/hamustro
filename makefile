@@ -24,14 +24,21 @@ all:
 install/%:
 	./utils/installer/_$*.sh
 
-$(GOPATH)/src/hamustro:
-	ln -f -s "`pwd`/src" $@
+$(GOPATH)/src/github.com/sub-ninja/:
+	mkdir -p $@
+
+$(GOPATH)/src/github.com/sub-ninja/hamustro: $(GOPATH)/src/github.com/sub-ninja/
+	ln -s "`pwd`" $@
 
 src/%.go:
 src/%/%.go:
 src/%/%/%.go:
 
-hamustro: $(GOPATH)/src/hamustro src/payload/ src/*.go src/*/*.go src/*/*/*.go
+hamustro: $(GOPATH)/src/github.com/sub-ninja/hamustro \
+       src/payload/ \
+       src/*.go \
+       src/*/*.go \
+       src/*/*/*.go
 	go build -o $@ src/*.go
 
 src/payload/:
@@ -61,7 +68,7 @@ profile/goroutine: profile/
 profile/heap: profile/
 	go tool pprof --pdf hamustro $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/heap > $@.pdf
 
-tests/run: $(GOPATH)/src/hamustro
+tests/run: $(GOPATH)/src/github.com/sub-ninja/hamustro
 	go test -v ./...
 
 tests/send:

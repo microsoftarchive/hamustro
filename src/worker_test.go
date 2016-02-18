@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"hamustro/dialects"
+	"github.com/sub-ninja/hamustro/src/dialects"
 	"io/ioutil"
 	"log"
 	"sync"

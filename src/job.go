@@ -1,7 +1,7 @@
 package main
 
 import (
-	"hamustro/dialects"
+	"github.com/sub-ninja/hamustro/src/dialects"
 )
 
 // Job represents the job to be run.

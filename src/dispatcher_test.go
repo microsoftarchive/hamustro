@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"hamustro/dialects"
+	"github.com/sub-ninja/hamustro/src/dialects"
 	"io/ioutil"
 	"log"
 	"testing"

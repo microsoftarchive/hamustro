@@ -1,7 +1,7 @@
 package dialects
 
 import (
-	"hamustro/payload"
+	"github.com/sub-ninja/hamustro/src/payload"
 	"strconv"
 )
 

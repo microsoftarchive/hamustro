@@ -1,6 +1,7 @@
 syntax = "proto2";
 
-option objc_class_prefix = "HAM";
+// Please uncomment this line for the ObjC client
+// option objc_class_prefix = "HAM";
 
 message Payload {
   required uint64 at = 1;

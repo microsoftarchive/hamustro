@@ -2,7 +2,7 @@ package dialects
 
 import (
 	"github.com/golang/protobuf/proto"
-	"hamustro/payload"
+	"github.com/sub-ninja/hamustro/src/payload"
 	"reflect"
 	"testing"
 )

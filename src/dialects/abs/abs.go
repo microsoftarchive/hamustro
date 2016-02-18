@@ -3,7 +3,7 @@ package abs
 import (
 	"bytes"
 	"github.com/Azure/azure-sdk-for-go/storage"
-	"hamustro/dialects"
+	"github.com/sub-ninja/hamustro/src/dialects"
 )
 
 // Azure Queue Storage configuration file.
