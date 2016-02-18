@@ -26,25 +26,6 @@ func GetTestEvent(userId uint32) *Event {
 		IsTesting:      false}
 }
 
-// Converts an EPOCH timestamp to UTC isoformat timestamp
-func TestConvertEpochIntoIsoformat(t *testing.T) {
-	t.Log("Converting EPOCH timestamp to UTC isoformat timestamp")
-	exp := "2016-02-05 15:05:04"
-	if ts := ConvertIsoformat(1454681104); ts != exp {
-		t.Errorf("Expected timestamp was %s but it was %s instead", exp, ts)
-	}
-
-	t.Log("Converting Unix Micro to UTC isoformat timestamp")
-	if ts := ConvertIsoformat(1454681104000); ts == exp {
-		t.Errorf("Expected timestamp was not %s", ts)
-	}
-
-	t.Log("Converting Unix Nano to UTC isoformat timestamp")
-	if ts := ConvertIsoformat(1454681104000000); ts == exp {
-		t.Errorf("Expected timestamp was not %s", ts)
-	}
-}
-
 // Converts and Event into a list of string
 func TestEventStringConversion(t *testing.T) {
 	t.Log("Converting Event into a list of strings")

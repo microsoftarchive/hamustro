@@ -5,7 +5,15 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"time"
 )
+
+// Converts EPOCH timestamp to isoformat string
+func ConvertIsoformat(at uint64) string {
+	// Use this format instead of isoformat: https://msdn.microsoft.com/en-us/library/dn935026.aspx
+	// It's working with Amazon Redshift and Azure SQL Data Warehouse
+	return time.Unix(int64(at), 0).UTC().Format("2006-01-02 15:04:05")
+}
 
 // Define converter functions based on the file extension type.
 type Converter func(event *Event) (*bytes.Buffer, error)
