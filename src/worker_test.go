@@ -1,9 +1,9 @@
 package main
 
 import (
-	"./dialects"
 	"bytes"
 	"fmt"
+	"hamustro/dialects"
 	"io/ioutil"
 	"log"
 	"sync"

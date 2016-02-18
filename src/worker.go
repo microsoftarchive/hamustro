@@ -1,8 +1,8 @@
 package main
 
 import (
-	"./dialects"
 	"fmt"
+	"hamustro/dialects"
 	"log"
 	"sync"
 )

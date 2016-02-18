@@ -1,8 +1,8 @@
 package dialects
 
 import (
-	"../payload"
 	"github.com/golang/protobuf/proto"
+	"hamustro/payload"
 	"reflect"
 	"testing"
 )

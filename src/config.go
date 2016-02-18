@@ -1,13 +1,13 @@
 package main
 
 import (
-	"./dialects"
-	"./dialects/abs"
-	"./dialects/aqs"
-	"./dialects/s3"
-	"./dialects/sns"
 	"encoding/json"
 	"fmt"
+	"hamustro/dialects"
+	"hamustro/dialects/abs"
+	"hamustro/dialects/aqs"
+	"hamustro/dialects/s3"
+	"hamustro/dialects/sns"
 	"io/ioutil"
 	"log"
 	"os"

@@ -9,4 +9,3 @@ install:
 - make install/pkg
 - make hamustro
 script: make tests/run
-go_import_path: hamustro

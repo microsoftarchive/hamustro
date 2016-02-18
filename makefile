@@ -24,20 +24,23 @@ all:
 install/%:
 	./utils/installer/_$*.sh
 
+$(GOPATH)/src/hamustro:
+	ln -f -s "`pwd`/src" $@
+
 src/%.go:
 src/%/%.go:
 src/%/%/%.go:
 
-hamustro: src/payload/ src/*.go src/*/*.go src/*/*/*.go
+hamustro: $(GOPATH)/src/hamustro src/payload/ src/*.go src/*/*.go src/*/*/*.go
 	go build -o $@ src/*.go
 
 src/payload/:
 	protoc --go_out=. proto/*.proto
-	mkdir -p $@ && mv proto/*.go src/payload/
+	mkdir -p $@ && mv proto/*.go $@
 
 utils/payload/:
 	protoc --python_out=. proto/*.proto
-	mkdir -p $@ && mv proto/*.py utils/payload/
+	mkdir -p $@ && mv proto/*.py $@
 	echo "from payload_pb2 import *" > $@/__init__.py
 
 dev: hamustro utils/payload/
@@ -58,7 +61,7 @@ profile/goroutine: profile/
 profile/heap: profile/
 	go tool pprof --pdf hamustro $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/heap > $@.pdf
 
-tests/run:
+tests/run: $(GOPATH)/src/hamustro
 	go test -v ./...
 
 tests/send:

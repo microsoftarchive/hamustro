@@ -1,8 +1,6 @@
 package main
 
 import (
-	"./dialects"
-	"./payload"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/base64"
@@ -10,6 +8,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"hamustro/dialects"
+	"hamustro/payload"
 	"io"
 	"io/ioutil"
 	"log"

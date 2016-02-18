@@ -1,7 +1,7 @@
 package dialects
 
 import (
-	"../payload"
+	"hamustro/payload"
 	"strconv"
 )
 

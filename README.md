@@ -16,7 +16,7 @@ Currently supported cloud targets are (tested throughput on a c3.xlarge computer
 * __Microsoft Azure Blob Storage__: 6.05M events/minute, 7.8k multi payload requests/s
 * __Microsoft Azure Queue Storage__: 5k events/minute, 5 multi payload requests/s
 
-6Wunderkinder used a similar node.js based service that secured messages in AWS SNS. Based on experiences we've rewritten the app in Go that can handle 100x more requests on equal hardware resources.
+6Wunderkinder used a similar node.js based service that secured messages in AWS SNS. Based on experiences we've rewritten the app in Go that can handle 20x more requests on equal hardware resources.
 
 Inspired by UNIX philosophy (do one thing and do it well) and [Marcio Castilho's approach](http://marcio.io/2015/07/handling-1-million-requests-per-minute-with-golang/).
 

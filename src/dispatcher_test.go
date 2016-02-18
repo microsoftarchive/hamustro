@@ -1,8 +1,8 @@
 package main
 
 import (
-	"./dialects"
 	"bytes"
+	"hamustro/dialects"
 	"io/ioutil"
 	"log"
 	"testing"

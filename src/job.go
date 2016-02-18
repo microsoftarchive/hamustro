@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./dialects"
+	"hamustro/dialects"
 )
 
 // Job represents the job to be run.

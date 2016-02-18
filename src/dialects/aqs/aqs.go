@@ -1,9 +1,9 @@
 package aqs
 
 import (
-	".."
 	"bytes"
 	"github.com/Azure/azure-sdk-for-go/storage"
+	"hamustro/dialects"
 )
 
 // Azure Queue Storage configuration file.
