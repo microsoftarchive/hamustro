@@ -108,11 +108,26 @@ func TestFunctionIncreasePenaltyAndGetBufferSize(t *testing.T) {
 
 // Tests the buffer full condition and adding events to the buffer
 func TestFunctionBufferFullAndAddEventToBuffer(t *testing.T) {
-	// TODO: IsBufferFull()
-	// TODO: ResetBuffer()
-	// TODO: AddEventsToBuffer
-	t.Log("Adding events to the buffer")
-	// worker := &Worker{BufferSize: 2, Penalty: 1.0}
+	t.Log("Testing worker's buffer functions")
+	worker := &Worker{BufferSize: 2, Penalty: 1.0}
+	worker.AddEventToBuffer(GetTestEvent(2158942))
+	if exp := 1; len(worker.BufferedEvents) != exp {
+		t.Errorf("Expected buffer length was %d but it was %d instead", exp, len(worker.BufferedEvents))
+	}
+	if worker.IsBufferFull() {
+		t.Errorf("Buffer should not be full with %d length", len(worker.BufferedEvents))
+	}
+	worker.AddEventToBuffer(GetTestEvent(54389423))
+	if exp := 2; len(worker.BufferedEvents) != exp {
+		t.Errorf("Expected buffer length was %d but it was %d instead", exp, len(worker.BufferedEvents))
+	}
+	if !worker.IsBufferFull() {
+		t.Errorf("Buffer should be full with %d length", len(worker.BufferedEvents))
+	}
+	worker.ResetBuffer()
+	if exp := 0; len(worker.BufferedEvents) != exp {
+		t.Errorf("Expected buffer length was %d but it was %d instead", exp, len(worker.BufferedEvents))
+	}
 }
 
 // Returns an Event for testing purposes
