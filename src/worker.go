@@ -60,7 +60,7 @@ func (w *Worker) Start() {
 					}
 
 					// Save message immediately.
-					if err := storageClient.Save(msg); err != nil {
+					if err := storageClient.Save(w.ID, msg); err != nil {
 						log.Printf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
 						job.MarkAsFailed(w.RetryAttempt)
 						continue
@@ -82,7 +82,7 @@ func (w *Worker) Start() {
 						continue
 					}
 					// Save messages
-					if err := storageClient.Save(msg); err != nil {
+					if err := storageClient.Save(w.ID, msg); err != nil {
 						w.IncreasePenalty()
 						log.Printf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 						continue
@@ -104,7 +104,7 @@ func (w *Worker) Start() {
 						return
 					}
 					// Save messages
-					if err := storageClient.Save(msg); err != nil {
+					if err := storageClient.Save(w.ID, msg); err != nil {
 						log.Printf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 						return
 					}

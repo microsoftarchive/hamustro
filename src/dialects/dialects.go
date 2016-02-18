@@ -9,7 +9,7 @@ type StorageClient interface {
 	IsBufferedStorage() bool
 	GetConverter() Converter
 	GetBatchConverter() BatchConverter
-	Save(*bytes.Buffer) error
+	Save(int, *bytes.Buffer) error
 }
 
 // Dialect interface for create StorageQueue from Configuration

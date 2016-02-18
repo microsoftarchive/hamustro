@@ -61,7 +61,7 @@ func (c *SNSStorage) GetBatchConverter() dialects.BatchConverter {
 }
 
 // Publish a single Event to SNS topic.
-func (c *SNSStorage) Save(msg *bytes.Buffer) error {
+func (c *SNSStorage) Save(workerID int, msg *bytes.Buffer) error {
 	params := &sns.PublishInput{
 		Message:  aws.String(msg.String()),
 		TopicArn: &c.TopicArn}

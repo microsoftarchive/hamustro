@@ -55,7 +55,7 @@ func (c *QueueStorage) GetBatchConverter() dialects.BatchConverter {
 }
 
 // Send a single Event into the Azure Queue Storage.
-func (c *QueueStorage) Save(msg *bytes.Buffer) error {
+func (c *QueueStorage) Save(workerID int, msg *bytes.Buffer) error {
 	if err := c.Client.PutMessage(c.QueueName, msg.String(), storage.PutMessageParameters{}); err != nil {
 		return err
 	}

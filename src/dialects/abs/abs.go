@@ -67,7 +67,7 @@ func (c *BlobStorage) GetBatchConverter() dialects.BatchConverter {
 }
 
 // Send a single Event into the Azure Queue Storage.
-func (c *BlobStorage) Save(msg *bytes.Buffer) error {
+func (c *BlobStorage) Save(workerID int, msg *bytes.Buffer) error {
 	buffer, err := dialects.Compress(msg)
 	if err != nil {
 		return err
