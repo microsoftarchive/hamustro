@@ -15,6 +15,7 @@ import (
 var T *testing.T
 var exp map[int]*bytes.Buffer
 var sResp error = nil
+var catched bool = false
 
 // Simple (not buffered) Storage Client for testing
 type SimpleStorageClient struct{}
@@ -29,6 +30,7 @@ func (c *SimpleStorageClient) GetBatchConverter() dialects.BatchConverter {
 	return nil
 }
 func (c *SimpleStorageClient) Save(workerID int, msg *bytes.Buffer) error {
+	catched = true
 	if sResp != nil {
 		return sResp
 	}
@@ -53,6 +55,7 @@ func (c *BufferedStorageClient) GetBatchConverter() dialects.BatchConverter {
 	return dialects.ConvertBatchJSON
 }
 func (c *BufferedStorageClient) Save(workerID int, msg *bytes.Buffer) error {
+	catched = true
 	if sResp != nil {
 		return sResp
 	}
@@ -166,6 +169,7 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	// Make testing.T and the response global
 	T = t
 	sResp = nil
+	catched = false
 
 	// Create a worker
 	t.Log("Creating a single worker")
@@ -188,12 +192,22 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	jobChannel <- &job
 	jobChannel = <-pool
 
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
+	}
+	catched = false
+
 	t.Log("Creating an another single job and send it to the worker")
 	job = Job{GetTestEvent(1321), 1}
 	expBuffer, _ = dialects.ConvertJSON(job.Event)
 	exp[worker.ID] = expBuffer
 	jobChannel <- &job
 	jobChannel = <-pool
+
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
+	}
+	catched = false
 
 	t.Log("Send something that will fail and raise an error")
 	sResp = fmt.Errorf("Error was intialized for testing")
@@ -206,6 +220,10 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	if job.Attempt != 2 {
 		t.Errorf("Job attempt number should be %d and it was %d instead", 2, job.Attempt)
 	}
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
+	}
+	catched = false
 
 	t.Log("This failed message must be in the jobQueue, try again.")
 	if len(jobQueue) != 1 {
@@ -216,6 +234,11 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	jobChannel <- jobq
 	jobChannel = <-pool
 
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
+	}
+	catched = false
+
 	t.Log("Send something that will fail and raise an error again")
 	sResp = fmt.Errorf("Error was intialized for testing")
 	job = Job{GetTestEvent(43254534), 1}
@@ -223,6 +246,11 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	exp[worker.ID] = expBuffer
 	jobChannel <- &job
 	jobChannel = <-pool
+
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
+	}
+	catched = false
 
 	t.Log("This failed message must be in the jobQueue, but let it fail again.")
 	if len(jobQueue) != 1 {
@@ -237,6 +265,9 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	}
 	if len(jobQueue) != 0 {
 		t.Errorf("jobQueue have to be empty because it was dropped after the 2nd attempt")
+	}
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
 	}
 }
 
@@ -254,6 +285,7 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	// Make testing.T and the response global
 	T = t
 	sResp = nil
+	catched = false
 
 	// Create a worker
 	t.Log("Creating a single worker")
@@ -296,6 +328,10 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	if exnr := 10; worker.GetBufferSize() != exnr {
 		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
 	}
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
+	}
+	catched = false
 
 	t.Log("Creating 14 job and send it to the worker, during the process it'll fail after the 10th")
 	sResp = fmt.Errorf("Error was intialized for testing")
@@ -337,6 +373,10 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	if exnr := 10; worker.GetBufferSize() != exnr {
 		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
 	}
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
+	}
+	catched = false
 
 	t.Log("Creating a single job and send it to the worker that will stay in the buffer until the worker stops")
 	job = Job{GetTestEvent(1), 1}
@@ -359,6 +399,9 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	if exnr := 0; len(worker.BufferedEvents) != exnr {
 		t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
 	}
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
+	}
 }
 
 // Multiple worker tests
@@ -376,6 +419,7 @@ func TestMultipleWorker(t *testing.T) {
 	// Make testing.T and the response global
 	T = t
 	sResp = nil
+	catched = false
 
 	// Create a worker
 	t.Log("Creating two worker to compete with each other")
@@ -410,6 +454,10 @@ func TestMultipleWorker(t *testing.T) {
 	jobChannel <- &job2
 
 	// Get two new channel to wait until the previous jobs are finished
-	jobChannel = <-pool
-	jobChannel = <-pool
+	<-pool
+	<-pool
+
+	if !catched {
+		t.Errorf("Worker didn't catch the expected jobs")
+	}
 }
