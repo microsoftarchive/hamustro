@@ -34,6 +34,8 @@ Please install [Go 1.5+](https://golang.org/dl/) and [Python 2.7 or 3.3+](https:
 $ sudo make install/go && source ~/.profile # you can install golang with this on OSX/Ubuntu if you need it
 $ sudo make install/protobuf # initialize communication format
 $ make install/pkg # golang dependencies
+$ make install/symlink # if you want to use this package outside of $GOPATH
+
 $ sudo make install/wrk # install http benchmarking tool
 $ make install/utils # utils for development
 ```
