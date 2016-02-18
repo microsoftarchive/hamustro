@@ -142,6 +142,19 @@ func TestFunctionIsSpreadBuffer(t *testing.T) {
 	}
 }
 
+// Testing the retry attempt
+func TestFunctionGetRetryAttempt(t *testing.T) {
+	t.Log("Testing the retry attempt property")
+	config := &Config{}
+	if exp := 3; config.GetRetryAttempt() != exp {
+		t.Errorf("Expected retry attempt was %d but it was %d instead", exp, config.GetRetryAttempt())
+	}
+	config = &Config{RetryAttempt: 8}
+	if exp := 8; config.GetRetryAttempt() != exp {
+		t.Errorf("Expected retry attempt was %d but it was %d instead", exp, config.GetRetryAttempt())
+	}
+}
+
 // Testing the dialect determination
 func TestFunctionDialectConfig(t *testing.T) {
 	t.Log("Testing dialect selector when dialect is not exists")

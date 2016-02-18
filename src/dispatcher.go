@@ -6,40 +6,53 @@ import (
 
 // A pool of workers channels that are registered with the dispatcher.
 type Dispatcher struct {
-	WorkerPool       chan chan *Job
-	Workers          []*Worker
-	MaxWorkers       int
-	BufferSize       int
-	SpreadBufferSize bool
+	WorkerPool    chan chan *Job
+	Workers       []*Worker
+	MaxWorkers    int
+	WorkerOptions *WorkerOptions
 }
 
-func NewDispatcher(maxWorkers int, bufferSize int, spreadBufferSize bool) *Dispatcher {
+// Creates a new dispatcher to handle new job requests
+func NewDispatcher(maxWorkers int, options *WorkerOptions) *Dispatcher {
 	pool := make(chan chan *Job, maxWorkers)
 	return &Dispatcher{
-		WorkerPool:       pool,
-		MaxWorkers:       maxWorkers,
-		BufferSize:       bufferSize,
-		SpreadBufferSize: spreadBufferSize}
+		WorkerPool:    pool,
+		WorkerOptions: options,
+		MaxWorkers:    maxWorkers}
 }
 
+// Returns the buffer size for a single worker
 func (d *Dispatcher) GetBufferSize(n int) int {
-	if !d.SpreadBufferSize {
-		return d.BufferSize
+	if !d.WorkerOptions.SpreadBuffer {
+		return d.WorkerOptions.BufferSize
 	}
-	slizeSize := int(d.BufferSize / (2 * (d.MaxWorkers - 1)))
-	return int(float32(d.BufferSize)*0.75) + (n * slizeSize)
+	slizeSize := int(d.WorkerOptions.BufferSize / (2 * (d.MaxWorkers - 1)))
+	return int(float32(d.WorkerOptions.BufferSize)*0.75) + (n * slizeSize)
 }
 
-func (d *Dispatcher) Run() {
+// Creates and starts the workers
+func (d *Dispatcher) Start() {
 	for i := 0; i < d.MaxWorkers; i++ {
-		worker := NewWorker(i, d.GetBufferSize(i), d.WorkerPool)
+		options := &WorkerOptions{
+			BufferSize:   d.GetBufferSize(i),
+			RetryAttempt: d.WorkerOptions.RetryAttempt}
+
+		// Create a new worker
+		worker := NewWorker(i, options, d.WorkerPool)
 		worker.Start()
+
+		// Add the worker into the list
 		d.Workers = append(d.Workers, worker)
 	}
+}
 
+// Creates and starts the workers and listen for new job requests
+func (d *Dispatcher) Run() {
+	d.Start()
 	go d.dispatch()
 }
 
+// Stops all the workers
 func (d *Dispatcher) Stop() {
 	var wg sync.WaitGroup
 	for i := range d.Workers {
@@ -49,6 +62,7 @@ func (d *Dispatcher) Stop() {
 	wg.Wait()
 }
 
+// Listening for new job requests
 func (d *Dispatcher) dispatch() {
 	for {
 		select {

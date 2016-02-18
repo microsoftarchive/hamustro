@@ -158,9 +158,15 @@ func main() {
 		log.Fatalf("Client initialization is failed: %s", err.Error())
 	}
 
+	// Creates a worker options
+	options := &WorkerOptions{
+		BufferSize:   config.GetBufferSize(),
+		RetryAttempt: config.GetRetryAttempt(),
+		SpreadBuffer: config.IsSpreadBuffer()}
+
 	// Create the background workers
 	jobQueue = make(chan *Job, config.GetMaxQueueSize())
-	dispatcher = NewDispatcher(config.GetMaxWorkerSize(), config.GetBufferSize(), config.IsSpreadBuffer())
+	dispatcher = NewDispatcher(config.GetMaxWorkerSize(), options)
 	dispatcher.Run()
 
 	// Capture SIGINT and SIGTERM events to finish the ongoing work

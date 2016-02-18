@@ -19,15 +19,23 @@ type Worker struct {
 	quit           chan *sync.WaitGroup
 }
 
-func NewWorker(id int, bufferSize int, workerPool chan chan *Job) *Worker {
+// Options for worker creation
+type WorkerOptions struct {
+	BufferSize   int
+	RetryAttempt int
+	SpreadBuffer bool
+}
+
+// Creates a new worker
+func NewWorker(id int, options *WorkerOptions, workerPool chan chan *Job) *Worker {
 	return &Worker{
 		ID:             id,
 		WorkerPool:     workerPool,
 		JobChannel:     make(chan *Job),
-		BufferSize:     bufferSize,
+		BufferSize:     options.BufferSize,
 		BufferedEvents: []*dialects.Event{},
 		Penalty:        1.0,
-		RetryAttempt:   3,
+		RetryAttempt:   options.RetryAttempt,
 		quit:           make(chan *sync.WaitGroup)}
 }
 

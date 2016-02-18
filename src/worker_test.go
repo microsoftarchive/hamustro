@@ -71,7 +71,7 @@ func TestFunctionGetIdAndNewWorker(t *testing.T) {
 
 	t.Log("Creating a worker with 312 id")
 	pool := make(chan chan *Job, 1)
-	worker := NewWorker(312, 10, pool)
+	worker := NewWorker(312, &WorkerOptions{}, pool)
 
 	if worker.GetId() != 312 {
 		t.Errorf("Expected worker's ID was %d but it was %d instead.", 312, worker.GetId())
@@ -170,8 +170,7 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	// Create a worker
 	t.Log("Creating a single worker")
 	pool := make(chan chan *Job, 1)
-	worker := NewWorker(1, 10, pool)
-	worker.RetryAttempt = 2
+	worker := NewWorker(1, &WorkerOptions{RetryAttempt: 2}, pool)
 	worker.Start()
 
 	// Stop the worker on the end
@@ -259,7 +258,7 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	// Create a worker
 	t.Log("Creating a single worker")
 	pool := make(chan chan *Job, 1)
-	worker := NewWorker(1, 10, pool)
+	worker := NewWorker(1, &WorkerOptions{BufferSize: 10}, pool)
 	worker.Start()
 
 	// Start the test
@@ -381,10 +380,10 @@ func TestMultipleWorker(t *testing.T) {
 	// Create a worker
 	t.Log("Creating two worker to compete with each other")
 	pool := make(chan chan *Job, 2)
-	w1 := NewWorker(1, 3, pool)
+	w1 := NewWorker(1, &WorkerOptions{RetryAttempt: 3}, pool)
 	w1.Start()
 
-	w2 := NewWorker(2, 3, pool)
+	w2 := NewWorker(2, &WorkerOptions{RetryAttempt: 3}, pool)
 	w2.Start()
 
 	// Stop the worker on the end
@@ -395,6 +394,7 @@ func TestMultipleWorker(t *testing.T) {
 
 	var jobChannel chan *Job
 
+	// Create two jobs and send it to channels
 	job1 := Job{GetTestEvent(1262473173), 1}
 	expBuffer1, _ := dialects.ConvertJSON(job1.Event)
 	exp[w1.ID] = expBuffer1
@@ -403,12 +403,13 @@ func TestMultipleWorker(t *testing.T) {
 	expBuffer2, _ := dialects.ConvertJSON(job2.Event)
 	exp[w2.ID] = expBuffer2
 
+	// It should catch a different worker with the expected results
 	jobChannel = <-pool
 	jobChannel <- &job1
 	jobChannel = <-pool
 	jobChannel <- &job2
 
-	// Get two new channel
+	// Get two new channel to wait until the previous jobs are finished
 	jobChannel = <-pool
 	jobChannel = <-pool
 }

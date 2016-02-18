@@ -22,6 +22,7 @@ type Config struct {
 	Dialect          string     `json:"dialect"`
 	MaxWorkerSize    int        `json:"max_worker_size"`
 	MaxQueueSize     int        `json:"max_queue_size"`
+	RetryAttempt     int        `json:"retry_attempt"`
 	BufferSize       int        `json:"buffer_size"`
 	SpreadBufferSize bool       `json:"spread_buffer_size"`
 	SharedSecret     string     `json:"shared_secret"`
@@ -105,6 +106,14 @@ func (c *Config) GetBufferSize() int {
 // Returns the default spreding property
 func (c *Config) IsSpreadBuffer() bool {
 	return c.SpreadBufferSize
+}
+
+// Returns the retry attempt number
+func (c *Config) GetRetryAttempt() int {
+	if c.RetryAttempt != 0 {
+		return c.RetryAttempt
+	}
+	return 3
 }
 
 // Returns the selected dialect's configuration object
