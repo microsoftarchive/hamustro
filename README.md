@@ -1,6 +1,8 @@
 
 # ![Hamustro](docs/logo.png) - the collector of events
 
+[![Travis](https://travis-ci.org/sub-ninja/hamustro.svg)](https://travis-ci.org/sub-ninja/hamustro)
+
 ## Overview
 
 This collector meant to be a highly available [RESTful web service](https://github.com/sub-ninja/tivan/blob/master/main.go#L200) that receives events from client devices and secures them agnostic of cloud targets.

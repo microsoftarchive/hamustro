@@ -28,7 +28,7 @@ $(GOPATH)/src/github.com/sub-ninja/:
 	mkdir -p $@
 
 $(GOPATH)/src/github.com/sub-ninja/hamustro: $(GOPATH)/src/github.com/sub-ninja/
-	ln -s "`pwd`" $@
+	ln -sh "`pwd`" $@
 
 src/%.go:
 src/%/%.go:

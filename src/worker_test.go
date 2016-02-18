@@ -35,7 +35,7 @@ func (c *SimpleStorageClient) Save(msg *bytes.Buffer) error {
 		return response
 	}
 	time.Sleep(100 * time.Millisecond)
-	T.Logf("(%d worker) Validating received message within the SimpleStorageClient")
+	T.Logf("Validating received message within the SimpleStorageClient")
 	msgString := msg.String()
 	if _, ok := exp[msgString]; !ok {
 		T.Errorf("Expected message was not %s", msgString)
