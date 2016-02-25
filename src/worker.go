@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/sub-ninja/hamustro/src/dialects"
+	"github.com/wunderlist/hamustro/src/dialects"
 	"log"
 	"sync"
 )

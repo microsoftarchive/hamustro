@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/sub-ninja/hamustro/src/dialects"
+	"github.com/wunderlist/hamustro/src/dialects"
 	"io/ioutil"
 	"log"
 	"testing"
@@ -59,19 +59,11 @@ func TestSpreadBufferNewDispatcher(t *testing.T) {
 		t.Errorf("Expected worker's count was %d but it was %d instead", exp, len(dispatcher.Workers))
 	}
 
-	w := dispatcher.Workers[0]
-	if exp := 7500; w.BufferSize != exp {
-		t.Errorf("Expected %d worker's buffer size was %d and it was %d instead", w.ID, exp, w.BufferSize)
-	}
-
-	w = dispatcher.Workers[1]
-	if exp := 10000; w.BufferSize != exp {
-		t.Errorf("Expected %d worker's buffer size was %d and it was %d instead", w.ID, exp, w.BufferSize)
-	}
-
-	w = dispatcher.Workers[2]
-	if exp := 12500; w.BufferSize != exp {
-		t.Errorf("Expected %d worker's buffer size was %d and it was %d instead", w.ID, exp, w.BufferSize)
+	cases := []int{7500, 10000, 12500}
+	for i, exp := range cases {
+		if dispatcher.Workers[i].BufferSize != exp {
+			t.Errorf("Expected %d worker's buffer size was %d and it was %d instead", dispatcher.Workers[i].ID, exp, dispatcher.Workers[i].BufferSize)
+		}
 	}
 }
 
@@ -79,25 +71,17 @@ func TestSpreadBufferNewDispatcher(t *testing.T) {
 func TestFunctionDispatcherGetBufferSize(t *testing.T) {
 	t.Log("Testing the buffer size caluculation function")
 	dispatcher := &Dispatcher{MaxWorkers: 3, WorkerOptions: &WorkerOptions{BufferSize: 10000, SpreadBuffer: true}}
-	if exp := 7500; dispatcher.GetBufferSize(0) != exp {
-		t.Errorf("Expected buffer size was %d and it was %d instead", exp, dispatcher.GetBufferSize(0))
-	}
-	if exp := 10000; dispatcher.GetBufferSize(1) != exp {
-		t.Errorf("Expected buffer size was %d and it was %d instead", exp, dispatcher.GetBufferSize(1))
-	}
-	if exp := 12500; dispatcher.GetBufferSize(2) != exp {
-		t.Errorf("Expected buffer size was %d and it was %d instead", exp, dispatcher.GetBufferSize(2))
+	for i, exp := range []int{7500, 10000, 12500} {
+		if size := dispatcher.GetBufferSize(i); size != exp {
+			t.Errorf("Expected buffer size was %d and it was %d instead", exp, size)
+		}
 	}
 
 	dispatcher = &Dispatcher{MaxWorkers: 3, WorkerOptions: &WorkerOptions{BufferSize: 10000, SpreadBuffer: false}}
-	if exp := 10000; dispatcher.GetBufferSize(0) != exp {
-		t.Errorf("Expected buffer size was %d and it was %d instead", exp, dispatcher.GetBufferSize(0))
-	}
-	if exp := 10000; dispatcher.GetBufferSize(1) != exp {
-		t.Errorf("Expected buffer size was %d and it was %d instead", exp, dispatcher.GetBufferSize(1))
-	}
-	if exp := 10000; dispatcher.GetBufferSize(2) != exp {
-		t.Errorf("Expected buffer size was %d and it was %d instead", exp, dispatcher.GetBufferSize(2))
+	for i, exp := range []int{10000, 10000, 10000} {
+		if size := dispatcher.GetBufferSize(i); size != exp {
+			t.Errorf("Expected buffer size was %d and it was %d instead", exp, size)
+		}
 	}
 }
 

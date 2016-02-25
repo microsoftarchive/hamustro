@@ -1,15 +1,15 @@
 
 # ![Hamustro](docs/logo.png) - the collector of events
 
-[![Travis](https://travis-ci.org/sub-ninja/hamustro.svg)](https://travis-ci.org/sub-ninja/hamustro)
+[![Travis](https://travis-ci.org/wunderlist/hamustro.svg)](https://travis-ci.org/wunderlist/hamustro)
 
 ## Overview
 
-This collector meant to be a highly available [RESTful web service](https://github.com/sub-ninja/tivan/blob/master/main.go#L200) that receives events from client devices and secures them agnostic of cloud targets.
+This collector meant to be a highly available [RESTful web service](https://github.com/wunderlist/hamustro/blob/master/src/request.go#L27) that receives events from client devices and secures them agnostic of cloud targets.
 
 The collector is implemented in Go, runs on Ubuntu and OSX.
 
-Events are sent in [Protobuf](https://github.com/sub-ninja/tivan/blob/master/payload/payload.proto) messages.
+Events are sent in [Protobuf](https://github.com/wunderlist/hamustro/blob/master/proto/payload.proto) messages.
 
 Currently supported cloud targets are (tested throughput on a c3.xlarge computer with 4vCPU in AWS):
 

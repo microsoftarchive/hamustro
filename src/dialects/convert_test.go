@@ -9,20 +9,18 @@ import (
 
 // Converts an EPOCH timestamp to UTC isoformat timestamp
 func TestConvertEpochIntoIsoformat(t *testing.T) {
-	t.Log("Converting EPOCH timestamp to UTC isoformat timestamp")
-	exp := "2016-02-05 14:05:04"
-	if ts := ConvertIsoformat(1454681104); ts != exp {
-		t.Errorf("Expected timestamp was %s but it was %s instead", exp, ts)
-	}
+	cases := []struct {
+		Input    uint64
+		Expected string
+	}{
+		{1454681104, "2016-02-05 14:05:04"},
+		{1454681104000, "48067-01-03 20:26:40"},
+		{1454681104000000, "46098979-02-11 20:26:40"}}
 
-	t.Log("Converting Unix Micro to UTC isoformat timestamp")
-	if ts := ConvertIsoformat(1454681104000); ts == exp {
-		t.Errorf("Expected timestamp was not %s", ts)
-	}
-
-	t.Log("Converting Unix Nano to UTC isoformat timestamp")
-	if ts := ConvertIsoformat(1454681104000000); ts == exp {
-		t.Errorf("Expected timestamp was not %s", ts)
+	for _, c := range cases {
+		if ts := ConvertIsoformat(c.Input); ts != c.Expected {
+			t.Errorf("Expected timestamp was %s but it was %s instead.", c.Expected, ts)
+		}
 	}
 }
 

@@ -61,6 +61,9 @@ profile/goroutine: profile/
 profile/heap: profile/
 	go tool pprof --pdf hamustro $(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/debug/pprof/heap > $@.pdf
 
+profile/lines:
+	git ls-files | xargs cat | wc -l
+
 tests/run:
 	go test -v -cover ./...
 

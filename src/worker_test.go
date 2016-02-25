@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/sub-ninja/hamustro/src/dialects"
+	"github.com/wunderlist/hamustro/src/dialects"
 	"io/ioutil"
 	"log"
 	"sync"
@@ -91,30 +91,28 @@ func TestFunctionGetIdAndNewWorker(t *testing.T) {
 func TestFunctionIncreasePenaltyAndGetBufferSize(t *testing.T) {
 	t.Log("Increasing penalty")
 	worker := &Worker{BufferSize: 100, Penalty: 1.0}
-	if exbs := 100; worker.GetBufferSize() != exbs {
-		t.Errorf("Expected buffer size was %d but it was %d instead", exp, worker.GetBufferSize())
-	}
-	worker.IncreasePenalty()
-	if exp := float32(1.5); worker.Penalty != exp {
-		t.Errorf("Expected penalty was %f but it was %f instead", exp, worker.Penalty)
-	}
-	if exbs := 150; worker.GetBufferSize() != exbs {
-		t.Errorf("Expected buffer size was %d but it was %d instead", exp, worker.GetBufferSize())
-	}
-	worker.IncreasePenalty()
-	if exp := float32(2.25); worker.Penalty != exp {
-		t.Errorf("Expected penalty was %f but it was %f instead", exp, worker.Penalty)
-	}
-	if exbs := 225; worker.GetBufferSize() != exbs {
-		t.Errorf("Expected buffer size was %d but it was %d instead", exp, worker.GetBufferSize())
-	}
-	t.Log("Reset the buffer")
-	worker.ResetBuffer()
-	if exp := float32(1.0); worker.Penalty != exp {
-		t.Errorf("Expected penalty was %f but it was %f instead", exp, worker.Penalty)
-	}
-	if exbs := 100; worker.GetBufferSize() != exbs {
-		t.Errorf("Expected buffer size was %d but it was %d instead", exp, worker.GetBufferSize())
+
+	cases := []struct {
+		ExpectedBufferSize int
+		ExpectedPenalty    float32
+		ResetBuffer        bool
+	}{
+		{100, 1.0, false},
+		{150, 1.5, false},
+		{225, 2.25, false},
+		{100, 1.0, true}}
+
+	for _, c := range cases {
+		if c.ResetBuffer {
+			worker.ResetBuffer()
+		}
+		if worker.Penalty != c.ExpectedPenalty {
+			t.Errorf("Expected penalty was %f but it was %f instead", c.ExpectedPenalty, worker.Penalty)
+		}
+		if bs := worker.GetBufferSize(); bs != c.ExpectedBufferSize {
+			t.Errorf("Expected buffer size was %d but it was %d instead", c.ExpectedBufferSize, bs)
+		}
+		worker.IncreasePenalty()
 	}
 }
 
@@ -122,19 +120,22 @@ func TestFunctionIncreasePenaltyAndGetBufferSize(t *testing.T) {
 func TestFunctionBufferFullAndAddEventToBuffer(t *testing.T) {
 	t.Log("Testing worker's buffer functions")
 	worker := &Worker{BufferSize: 2, Penalty: 1.0}
-	worker.AddEventToBuffer(GetTestEvent(2158942))
-	if exp := 1; len(worker.BufferedEvents) != exp {
-		t.Errorf("Expected buffer length was %d but it was %d instead", exp, len(worker.BufferedEvents))
-	}
-	if worker.IsBufferFull() {
-		t.Errorf("Buffer should not be full with %d length", len(worker.BufferedEvents))
-	}
-	worker.AddEventToBuffer(GetTestEvent(54389423))
-	if exp := 2; len(worker.BufferedEvents) != exp {
-		t.Errorf("Expected buffer length was %d but it was %d instead", exp, len(worker.BufferedEvents))
-	}
-	if !worker.IsBufferFull() {
-		t.Errorf("Buffer should be full with %d length", len(worker.BufferedEvents))
+
+	cases := []struct {
+		ExpectedBufferLength int
+		ExpectedBufferFull   bool
+	}{
+		{1, false},
+		{2, true}}
+
+	for _, c := range cases {
+		worker.AddEventToBuffer(GetTestEvent(2158942))
+		if length := len(worker.BufferedEvents); length != c.ExpectedBufferLength {
+			t.Errorf("Expected buffer length was %d but it was %d instead", c.ExpectedBufferLength, length)
+		}
+		if isFull := worker.IsBufferFull(); isFull != c.ExpectedBufferFull {
+			t.Errorf("Buffer should be %s but it was %s instead.", c.ExpectedBufferFull, isFull)
+		}
 	}
 	worker.ResetBuffer()
 	if exp := 0; len(worker.BufferedEvents) != exp {
@@ -161,19 +162,58 @@ func GetTestEvent(userId uint32) *dialects.Event {
 		IsTesting:      false}
 }
 
+// Sets the jobs expectation
+func SetJobExpectation(jobs []*Job, fail bool, resetExpectation bool) {
+	if fail {
+		response = fmt.Errorf("Error was intialized for testing")
+	} else {
+		response = nil
+	}
+	if resetExpectation {
+		exp = map[string]struct{}{}
+	}
+	var part *bytes.Buffer
+	partStr := ""
+	for _, job := range jobs {
+		part, _ = dialects.ConvertJSON(job.Event)
+		partStr += part.String()
+	}
+	exp[partStr] = struct{}{}
+}
+
+// Sends a single job to job channel
+func SendToJobChannel(workerPool chan chan *Job, jobChannel chan *Job, job *Job) chan *Job {
+	expBuffer, _ := dialects.ConvertJSON(job.Event)
+	exp[expBuffer.String()] = struct{}{}
+	jobChannel <- job
+	jobChannel = <-workerPool
+	return jobChannel
+}
+
+// Validates the previous sending
+func ValidateSending() {
+	if !catched {
+		T.Errorf("Worker didn't catch the expected job")
+	}
+	catched = false
+}
+
+// Sets the expected result, send the message, and validate it.
+func SetSendValidate(workerPool chan chan *Job, jobChannel chan *Job, jobs []*Job, fail bool, resetExpectation bool) chan *Job {
+	SetJobExpectation(jobs, fail, resetExpectation)
+	for _, job := range jobs {
+		jobChannel = SendToJobChannel(workerPool, jobChannel, job)
+	}
+	ValidateSending()
+	return jobChannel
+}
+
 // Tests the simple storage client (not buffered) with a single worker
 func TestSimpleStorageClientWorker(t *testing.T) {
-	// Disable the logger
-	log.SetOutput(ioutil.Discard)
-
-	// Define the job Queue and the Simple Storage Client
-	jobQueue = make(chan *Job, 10)
-	storageClient = &SimpleStorageClient{}
-
-	// Make testing.T and the response global
-	T = t
-	response = nil
-	catched = false
+	storageClient = &SimpleStorageClient{} // Define the Simple Storage as a storage
+	jobQueue = make(chan *Job, 10)         // Creates a jobQueue
+	log.SetOutput(ioutil.Discard)          // Disable the logger
+	T, response, catched = t, nil, false   // Set properties
 
 	// Create a worker
 	t.Log("Creating a single worker")
@@ -190,220 +230,130 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	jobChannel := <-pool
 
 	t.Log("Creating a single job and send it to the worker")
-	job := Job{GetTestEvent(3423543), 1}
-	expBuffer, _ := dialects.ConvertJSON(job.Event)
-	exp = map[string]struct{}{expBuffer.String(): {}}
-	jobChannel <- &job
-	jobChannel = <-pool
-
-	if !catched {
-		t.Errorf("Worker didn't catch the expected jobs")
-	}
-	catched = false
+	jobChannel = SetSendValidate(pool, jobChannel, []*Job{&Job{GetTestEvent(3423543), 1}}, false, true)
 
 	t.Log("Creating an another single job and send it to the worker")
-	job = Job{GetTestEvent(1321), 1}
-	expBuffer, _ = dialects.ConvertJSON(job.Event)
-	exp = map[string]struct{}{expBuffer.String(): {}}
-	jobChannel <- &job
-	jobChannel = <-pool
-
-	if !catched {
-		t.Errorf("Worker didn't catch the expected jobs")
-	}
-	catched = false
+	jobChannel = SetSendValidate(pool, jobChannel, []*Job{&Job{GetTestEvent(1321), 1}}, false, true)
 
 	t.Log("Send something that will fail and raise an error")
-	response = fmt.Errorf("Error was intialized for testing")
-	job = Job{GetTestEvent(43233), 1}
-	expBuffer, _ = dialects.ConvertJSON(job.Event)
-	exp = map[string]struct{}{expBuffer.String(): {}}
-	jobChannel <- &job
-	jobChannel = <-pool
-
+	job := &Job{GetTestEvent(43233), 1}
+	jobChannel = SetSendValidate(pool, jobChannel, []*Job{job}, true, true)
 	if job.Attempt != 2 {
 		t.Errorf("Job attempt number should be %d and it was %d instead", 2, job.Attempt)
 	}
-	if !catched {
-		t.Errorf("Worker didn't catch the expected jobs")
-	}
-	catched = false
 
 	t.Log("This failed message must be in the jobQueue, try again.")
 	if len(jobQueue) != 1 {
 		t.Errorf("jobChannel doesn't contain the previous job")
 	}
-	jobq := <-jobQueue
-	response = nil
-	jobChannel <- jobq
-	jobChannel = <-pool
-
-	if !catched {
-		t.Errorf("Worker didn't catch the expected jobs")
-	}
-	catched = false
+	jobChannel = SetSendValidate(pool, jobChannel, []*Job{<-jobQueue}, false, true)
 
 	t.Log("Send something that will fail and raise an error again")
-	response = fmt.Errorf("Error was intialized for testing")
-	job = Job{GetTestEvent(43254534), 1}
-	expBuffer, _ = dialects.ConvertJSON(job.Event)
-	exp = map[string]struct{}{expBuffer.String(): {}}
-	jobChannel <- &job
-	jobChannel = <-pool
-
-	if !catched {
-		t.Errorf("Worker didn't catch the expected jobs")
-	}
-	catched = false
+	jobChannel = SetSendValidate(pool, jobChannel, []*Job{&Job{GetTestEvent(43254534), 1}}, true, true)
 
 	t.Log("This failed message must be in the jobQueue, but let it fail again.")
 	if len(jobQueue) != 1 {
 		t.Errorf("jobQueue doesn't contain the previous job")
 	}
-	jobq = <-jobQueue
-	jobChannel <- jobq
-	jobChannel = <-pool
-
+	job = <-jobQueue
+	jobChannel = SetSendValidate(pool, jobChannel, []*Job{job}, true, true)
 	if job.Attempt != 3 {
 		t.Errorf("Job attempt number should be %d and it was %d instead", 3, job.Attempt)
 	}
 	if len(jobQueue) != 0 {
 		t.Errorf("jobQueue have to be empty because it was dropped after the 2nd attempt")
 	}
-	if !catched {
-		t.Errorf("Worker didn't catch the expected jobs")
+}
+
+// Tests the results of the buffered storage worker's test
+func CheckResultsForBufferedStorage(worker *Worker, bufferLength int, penalty float32, bufferSize int) {
+	if len(worker.BufferedEvents) != bufferLength {
+		T.Errorf("Worker's buffered events count should be %d but it was %d instead", bufferLength, len(worker.BufferedEvents))
+	}
+	if worker.Penalty != penalty {
+		T.Errorf("Expected worker's penalty was %d but it was %d instead", penalty, worker.Penalty)
+	}
+	if worker.GetBufferSize() != bufferSize {
+		T.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", bufferSize, worker.GetBufferSize())
 	}
 }
 
 // Tests the simple storage client (not buffered) with a single worker
 func TestBufferedStorageClientWorker(t *testing.T) {
-	// Disable the logger
-	log.SetOutput(ioutil.Discard)
-
-	// Define the job Queue and the Buffered Storage Client
-	jobQueue = make(chan *Job, 10)
-	storageClient = &BufferedStorageClient{}
-
-	// Make testing.T and the response global
-	T = t
-	response = nil
-	catched = false
+	var wg sync.WaitGroup
+	storageClient = &BufferedStorageClient{} // Define the Buffer Storage as a storage
+	jobQueue = make(chan *Job, 10)           // Creates a jobQueue
+	log.SetOutput(ioutil.Discard)            // Disable the logger
+	T, response, catched = t, nil, false     // Set properties
 
 	// Create a worker
-	t.Log("Creating a single worker")
+	t.Log("Creating a single worker with buffer size: 4")
 	pool := make(chan chan *Job, 1)
-	worker := NewWorker(1, &WorkerOptions{BufferSize: 10}, pool)
+	worker := NewWorker(1, &WorkerOptions{BufferSize: 4}, pool)
 	worker.Start()
 
 	// Start the test
 	jobChannel := <-pool
-	var job Job
 
-	t.Log("Creating 9 job and send it to the worker")
-	partStr := ""
-	for i := 0; i < 9; i++ {
-		job = Job{GetTestEvent(uint32(56746535 + i)), 1}
-		part, _ := dialects.ConvertJSON(job.Event)
-		partStr += part.String()
-		jobChannel <- &job
-		jobChannel = <-pool
-
-		if exnr := i + 1; len(worker.BufferedEvents) != exnr {
-			t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
+	t.Log("Creating 3 job and send it to the worker")
+	jobs := []*Job{&Job{GetTestEvent(54354353), 1}, &Job{GetTestEvent(543), 1}, &Job{GetTestEvent(765342), 1}, &Job{GetTestEvent(1), 1}}
+	SetJobExpectation(jobs, false, true)
+	for i, job := range jobs {
+		if len(worker.BufferedEvents) != i {
+			t.Errorf("Worker's buffered events count should be %d but it was %d instead", i, len(worker.BufferedEvents))
 		}
+		jobChannel = SendToJobChannel(pool, jobChannel, job)
 	}
+	ValidateSending()
+	CheckResultsForBufferedStorage(worker, 0, 1.0, 4)
 
-	t.Log("Creating the 10th job and send it to the worker that will proceed the buffer")
-	job = Job{GetTestEvent(1), 1}
-	part, _ := dialects.ConvertJSON(job.Event)
-	partStr += part.String()
-	exp = map[string]struct{}{partStr: {}}
-	jobChannel <- &job
-	jobChannel = <-pool
+	t.Log("Creating 6 job and send it to the worker, during the process it'll fail after the 4th and will be accepted after the 6th")
+	jobs = []*Job{&Job{GetTestEvent(423), 1}, &Job{GetTestEvent(654645), 1}, &Job{GetTestEvent(123123), 1}, &Job{GetTestEvent(16548), 1}}
+	SetSendValidate(pool, jobChannel, jobs, true, true)
+	CheckResultsForBufferedStorage(worker, 4, 1.5, 6)
 
-	if exnr := 0; len(worker.BufferedEvents) != exnr {
-		t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
+	jobs = append(jobs, []*Job{&Job{GetTestEvent(64562), 1}, &Job{GetTestEvent(13127), 1}}...)
+	SetJobExpectation(jobs, false, true)
+	for _, job := range jobs[4:] {
+		jobChannel = SendToJobChannel(pool, jobChannel, job)
 	}
-	if expen := float32(1.0); worker.Penalty != expen {
-		t.Errorf("Expected worker's penalty was %d but it was %d instead", expen, worker.Penalty)
-	}
-	if exnr := 10; worker.GetBufferSize() != exnr {
-		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
-	}
-	if !catched {
-		t.Errorf("Worker didn't catch the expected jobs")
-	}
-	catched = false
-
-	t.Log("Creating 14 job and send it to the worker, during the process it'll fail after the 10th")
-	response = fmt.Errorf("Error was intialized for testing")
-	partStr = ""
-	for i := 0; i < 14; i++ {
-		job = Job{GetTestEvent(uint32(213432 + i)), 1}
-		part, _ := dialects.ConvertJSON(job.Event)
-		partStr += part.String()
-		jobChannel <- &job
-		jobChannel = <-pool
-
-		if exnr := i + 1; len(worker.BufferedEvents) != exnr {
-			t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
-		}
-	}
-
-	if expen := float32(1.5); worker.Penalty != expen {
-		t.Errorf("Expected worker's penalty was %d but it was %d instead", expen, worker.Penalty)
-	}
-	if exnr := 15; worker.GetBufferSize() != exnr {
-		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
-	}
-
-	response = nil
-	t.Log("Creating the 15th job and send it to the worker that will proceed the buffer")
-	job = Job{GetTestEvent(1), 1}
-	part, _ = dialects.ConvertJSON(job.Event)
-	partStr += part.String()
-	exp = map[string]struct{}{partStr: {}}
-	jobChannel <- &job
-	jobChannel = <-pool
-
-	if exnr := 0; len(worker.BufferedEvents) != exnr {
-		t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
-	}
-	if expen := float32(1.0); worker.Penalty != expen {
-		t.Errorf("Expected worker's penalty was %d but it was %d instead", expen, worker.Penalty)
-	}
-	if exnr := 10; worker.GetBufferSize() != exnr {
-		t.Errorf("Expected worker's buffer size after the error was %d but it was %d instead", exnr, worker.GetBufferSize())
-	}
-	if !catched {
-		t.Errorf("Worker didn't catch the expected jobs")
-	}
-	catched = false
+	ValidateSending()
+	CheckResultsForBufferedStorage(worker, 0, 1.0, 4)
 
 	t.Log("Creating a single job and send it to the worker that will stay in the buffer until the worker stops")
-	job = Job{GetTestEvent(1), 1}
-	expBuffer, _ := dialects.ConvertJSON(job.Event)
-	exp = map[string]struct{}{expBuffer.String(): {}}
-	jobChannel <- &job
-	jobChannel = <-pool
-
-	if exnr := 1; len(worker.BufferedEvents) != exnr {
-		t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
-	}
+	job := &Job{GetTestEvent(9843211), 1}
+	SetJobExpectation([]*Job{job}, false, true)
+	jobChannel = SendToJobChannel(pool, jobChannel, job)
+	CheckResultsForBufferedStorage(worker, 1, 1.0, 4)
 
 	t.Log("Stop the worker and write out the current buffer")
-	// Stop the worker on the end
-	var wg sync.WaitGroup
 	wg.Add(1)
 	worker.Stop(&wg)
 	wg.Wait()
+	ValidateSending()
+	CheckResultsForBufferedStorage(worker, 0, 1.0, 4)
 
-	if exnr := 0; len(worker.BufferedEvents) != exnr {
-		t.Errorf("Worker's buffered events count should be %d but it was %d instead", exnr, len(worker.BufferedEvents))
-	}
-	if !catched {
-		t.Errorf("Worker didn't catch the expected jobs")
-	}
+	// Create a worker again
+	t.Log("Creating a single worker again with buffer size: 4")
+	pool = make(chan chan *Job, 1)
+	worker = NewWorker(1, &WorkerOptions{BufferSize: 4}, pool)
+	worker.Start()
+
+	// Grab a channel
+	jobChannel = <-pool
+
+	t.Log("Creating a single job and send it to the worker that will stay in the buffer until the worker stops")
+	job = &Job{GetTestEvent(5435), 1}
+	SetJobExpectation([]*Job{job}, true, true)
+	jobChannel = SendToJobChannel(pool, jobChannel, job)
+	CheckResultsForBufferedStorage(worker, 1, 1.0, 4)
+
+	t.Log("Stop the worker and write out the current buffer that will fail and the message will be lost")
+	wg.Add(1)
+	worker.Stop(&wg)
+	wg.Wait()
+	ValidateSending()
+	CheckResultsForBufferedStorage(worker, 1, 1.0, 4)
 }
 
 // Multiple worker tests

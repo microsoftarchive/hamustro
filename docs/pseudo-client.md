@@ -98,7 +98,7 @@ X-Hamustro-Time: EPOCH UTC timestamp
 X-Hamustro-Signature: base64(sha256(X-Time + "|" + md5hex(request.body) + "|" + t.shared_secret_key))
 ```
 
-You can check out the proper signature generation in [Python](https://github.com/sub-ninja/hamustro/blob/master/utils/message.py#L46-L51).
+You can check out the proper signature generation in [Python](https://github.com/wunderlist/hamustro/blob/master/utils/message.py#L46-L51).
 
 Send this information to `/api/v1/track`.
 

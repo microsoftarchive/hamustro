@@ -17,14 +17,17 @@ func TestFunctionRandStringBytes(t *testing.T) {
 func TestFunctionResolvePath(t *testing.T) {
 	t.Log("Detecting placeholders in the file path")
 
-	p := ResolvePath("directory/subdirectory")
-	if exp := "directory/subdirectory"; exp != p {
-		t.Errorf("Expected path was %s but it was %s instead", exp, p)
-	}
+	cases := []struct {
+		Path     string
+		Expected string
+	}{
+		{"directory/subdirectory", "directory/subdirectory"},
+		{"directory/{date}", "directory/" + time.Now().UTC().Format("2006-01-02")}}
 
-	p = ResolvePath("directory/{date}")
-	if exp := "directory/" + time.Now().UTC().Format("2006-01-02"); exp != p {
-		t.Errorf("Expected path was %s but it was %s instead", exp, p)
+	for _, c := range cases {
+		if p := ResolvePath(c.Path); p != c.Expected {
+			t.Errorf("Expected path was %s but it was %s instead", c.Expected, p)
+		}
 	}
 }
 
