@@ -89,6 +89,7 @@ func main() {
 	// Start the server
 	log.Printf("Starting server at %s", config.GetAddress())
 	http.HandleFunc("/api/v1/track", TrackHandler)
+	http.HandleFunc("/api/health", HealthHandler)
 	http.ListenAndServe(config.GetAddress(), nil)
 }
 
