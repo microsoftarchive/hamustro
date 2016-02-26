@@ -26,7 +26,7 @@ _testmain.go
 config/*
 profile/*
 tests/*
-src/payload
-utils/payload
+src/payload/*.pb.go
+utils/payload/*_pb2.py
 hamustro
 *.pyc
