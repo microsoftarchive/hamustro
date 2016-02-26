@@ -67,17 +67,25 @@ $ make server
 
 ## Tests
 
-You can run the tests with
+You can run the unit tests with
 ```bash
 $ make tests/run
+```
+
+You can send a single message to the server with
+
+```bash
+$ make tests/send/protobuf
 ```
 
 If you want to start a stress test, please use
 
 ```bash
-$ make tests/stress/n # 1-25 payloads/request
-$ make tests/stress/1 # 1 payload/request
+$ make tests/protobuf/n # 1-25 payloads/protobuf request
+$ make tests/protobuf/1 # 1 payload/protobuf request
 ```
+
+Remember, you can use `json` instead of `protobuf` if you want. Using JSON is 10-15% slower though.
 
 During the stress test, you can profile the heap/cpu/goroutine usage easily in _development_ mode, just type
 

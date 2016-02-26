@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/wunderlist/hamustro/src/dialects"
 	"github.com/wunderlist/hamustro/src/payload"
 	"io/ioutil"
 	"log"
+	"mime"
 	"net/http"
 	_ "net/http/pprof"
 )
@@ -58,10 +60,22 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Read the body into protobuf decoding.
 	collection := &payload.Collection{}
-	if err := proto.Unmarshal(body, collection); err != nil {
-		BroadcastError(w, fmt.Sprintf("Unmarshaling protobuf collection is failed: %s", err.Error()), http.StatusBadRequest)
+	contentType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	switch contentType {
+	case "application/json":
+		if err := json.Unmarshal(body, collection); err != nil {
+			BroadcastError(w, fmt.Sprintf("Unmarshaling json collection is failed: %s", err.Error()), http.StatusBadRequest)
+			return
+		}
+	case "application/protobuf":
+		// Read the body into protobuf decoding.
+		if err := proto.Unmarshal(body, collection); err != nil {
+			BroadcastError(w, fmt.Sprintf("Unmarshaling protobuf collection is failed: %s", err.Error()), http.StatusBadRequest)
+			return
+		}
+	default:
+		BroadcastError(w, "Unsupported or missing Content-Type", http.StatusBadRequest)
 		return
 	}
 

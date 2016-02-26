@@ -28,22 +28,21 @@ src/%.go:
 src/%/%.go:
 src/%/%/%.go:
 
-hamustro: src/payload/ \
+hamustro: src/payload/payload.pb.go \
           src/*.go \
           src/*/*.go \
           src/*/*/*.go
 	go build -o $@ src/*.go
 
-src/payload/:
+src/payload/payload.pb.go:
 	protoc --go_out=. proto/*.proto
-	mkdir -p $@ && mv proto/*.go $@
+	mkdir -p $(dir $@) && mv proto/*.go $@
 
-utils/payload/:
+utils/payload/payload_pb2.py:
 	protoc --python_out=. proto/*.proto
-	mkdir -p $@ && mv proto/*.py $@
-	echo "from payload_pb2 import *" > $@/__init__.py
+	mkdir -p $(dir $@) && mv proto/*.py $@
 
-dev: hamustro utils/payload/
+dev: hamustro utils/payload/payload_pb2.py
 	./$< -config $(HAMUSTRO_CONFIG) -verbose
 
 server: hamustro
@@ -67,14 +66,17 @@ profile/lines:
 tests/run:
 	go test -v -cover ./...
 
-tests/send:
-	$(PYC) utils/send_single_message.py $(HAMUSTRO_CONFIG) "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
+tests/send/%:
+	$(PYC) utils/send_single_message.py --format "$*" $(HAMUSTRO_CONFIG) "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
 
-tests/stress/1-messages/:
+tests/1-messages/:
 	$(PYC) utils/generate_stress_messages.py $(HAMUSTRO_CONFIG) $@
 
-tests/stress/n-messages/:
+tests/n-messages/:
 	$(PYC) utils/generate_stress_messages.py -r $(HAMUSTRO_CONFIG) $@
 
-tests/stress/%: tests/stress/%-messages/
-	cd $< && wrk -t5 -c10 -d1m -s ../run.lua "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
+tests/protobuf/%: tests/%-messages/
+	cd $< && wrk -t5 -c10 -d1m -s ../protobuf.lua "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"
+
+tests/json/%: tests/%-messages/
+	cd $< && wrk -t5 -c10 -d1m -s ../json.lua "$(HAMUSTRO_SCHEMA)$(HAMUSTRO_HOST):$(HAMUSTRO_PORT)/api/v1/track"

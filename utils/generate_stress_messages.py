@@ -8,9 +8,13 @@ def generate(N, dir, shared_secret, random_payload):
     for i in range(N):
         msg = Message(random_payload)
         with io.open(os.path.join(dir, '{}.pb'.format(i+1)), 'wb') as fd:
-            fd.write(msg.body)
-        with io.open(os.path.join(dir, '{}.signature'.format(i+1)), 'w') as fd:
-            fd.write(msg.signature(shared_secret))
+            fd.write(msg.pb)
+        with io.open(os.path.join(dir, '{}.json'.format(i+1)), 'w', encoding='utf-8') as fd:
+            fd.write(msg.json)
+        with io.open(os.path.join(dir, '{}.pb.signature'.format(i+1)), 'w') as fd:
+            fd.write(msg.signature(shared_secret, 'protobuf'))
+        with io.open(os.path.join(dir, '{}.json.signature'.format(i+1)), 'w') as fd:
+            fd.write(msg.signature(shared_secret,'json'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

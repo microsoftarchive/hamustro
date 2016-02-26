@@ -9,6 +9,7 @@ from message import Message
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('-f','--format', default="protobuf", choices=["protobuf","json"], help="message format")
     parser.add_argument('CONFIG', type=argparse.FileType('r'), help="configuration file")
     parser.add_argument('URL', help="tavis url")
     args = parser.parse_args()
@@ -20,6 +21,7 @@ if __name__ == '__main__':
     msg.time = int(time.time())
     resp = requests.post(args.URL, headers={
         'X-Hamustro-Time': msg.time,
-        'X-Hamustro-Signature': msg.signature(shared_secret)
-    }, data=msg.body)
+        'X-Hamustro-Signature': msg.signature(shared_secret, args.format),
+        'Content-Type': 'application/{}; charset=utf-8'.format(args.format)
+    }, data=msg.get_body(args.format))
     print('Response code: {}'.format(resp.status_code))

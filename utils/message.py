@@ -1,10 +1,12 @@
 import uuid
+import json
 import time
 import base64
 import random
 import hashlib
 import datetime
 from payload import *
+from protobuf_to_dict import protobuf_to_dict as to_dict
 
 class Message(object):
     def __init__(self, random_payload=True):
@@ -42,11 +44,18 @@ class Message(object):
         return c
 
     @property
-    def body(self):
+    def pb(self):
         return self.collection.SerializeToString()
+    
+    @property
+    def json(self):
+        return json.dumps(to_dict(self.collection)).decode('utf-8')
+    
+    def get_body(self, output_format = 'protobuf'):
+        return {'protobuf': self.pb, 'json': self.json}[output_format]
 
-    def signature(self, shared_secret):
-        md5hex = hashlib.md5(self.body).hexdigest()
+    def signature(self, shared_secret, output_format = 'protobuf'):
+        md5hex = hashlib.md5(self.get_body(output_format)).hexdigest()
         bytehash = hashlib.sha256("{time}|{md5hex}|{shared_secret}" \
             .format(time=self.time, md5hex=md5hex, shared_secret=shared_secret)) \
             .digest()

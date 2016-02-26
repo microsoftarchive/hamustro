@@ -50,7 +50,7 @@ t.TrackEvent(
 ```
 
 Please set automatically 
-- the `at` uint64 attribute for the events - it must contain an EPOCH UTC timestamp, 
+- the `at` uint64 attribute for the events - it must contain an EPOCH UTC timestamp (seconds, ~10 digits), 
 - the `nr` integer attribute - it must contain the serial number of this event within the session all time. So, it starts counting from the first event in the session and it never defaults for that session, not even new application open,
 - the `ip` string attribute for actual IP address.
 
@@ -58,7 +58,7 @@ It'll queue up the events within the `ClientTracker`. You should store this in a
 
 ## Send events to the collector
 
-For sending messages we're using [Protobuf](https://developers.google.com/protocol-buffers/?hl=en). This is quicker to handle and smaller than JSON.
+For sending messages we're using [Protobuf](https://developers.google.com/protocol-buffers/?hl=en) or [JSON](http://www.json.org). This is quicker to handle and smaller than JSON.
 
 This is the message [format](../proto/payload.proto) we're using:
 
@@ -87,7 +87,9 @@ message Collection {
 
 You can send multiple `Payloads`, but as you can see you have to send these by session. Normally you won't have multiple sessions in your code but it can happen with bad connection and updates happening. Please sign them as 'Sent', but don't delete them before getting a response of '200'.
 
-The collector only accepts `POST` with a body of a valid Protobuf bytestream.
+The collector only accepts `POST` with a body of a valid 
+- Protobuf bytestream with `application/protobuf` content type,
+- unicode JSON string with `application/json` content type. 
 
 Please wait for `200` response code before you delete the already sent payloads. After that update the last sync time. Do not remove the events receiving a different error code.
 
@@ -95,10 +97,10 @@ Please define the following headers for sending:
 
 ```
 X-Hamustro-Time: EPOCH UTC timestamp
-X-Hamustro-Signature: base64(sha256(X-Time + "|" + md5hex(request.body) + "|" + t.shared_secret_key))
+X-Hamustro-Signature: base64(sha256(X-Hamustro-Time + "|" + md5hex(request.body) + "|" + t.shared_secret_key))
 ```
 
-You can check out the proper signature generation in [Python](https://github.com/wunderlist/hamustro/blob/master/utils/message.py#L46-L51).
+You can check out the proper signature generation in [Python](https://github.com/wunderlist/hamustro/blob/master/utils/message.py#L57-L62).
 
 Send this information to `/api/v1/track`.
 
