@@ -1,8 +1,9 @@
 package main
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/wunderlist/hamustro/src/dialects"
 	"github.com/wunderlist/hamustro/src/payload"
@@ -64,14 +65,17 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	contentType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	switch contentType {
 	case "application/json":
-		if err := json.Unmarshal(body, collection); err != nil {
+		if err := jsonpb.Unmarshal(bytes.NewBuffer(body), collection); err != nil {
 			BroadcastError(w, fmt.Sprintf("Unmarshaling json collection is failed: %s", err.Error()), http.StatusBadRequest)
 			return
 		}
+		if !collection.IsValid() {
+			BroadcastError(w, fmt.Sprintf("Unmarshaled json collection is failed: required field not set"), http.StatusBadRequest)
+			return
+		}
 	case "application/protobuf":
-		// Read the body into protobuf decoding.
 		if err := proto.Unmarshal(body, collection); err != nil {
-			BroadcastError(w, fmt.Sprintf("Unmarshaling protobuf collection is failed: %s", err.Error()), http.StatusBadRequest)
+			BroadcastError(w, fmt.Sprintf("Unmarshaling protobuf is failed: %s", err.Error()), http.StatusBadRequest)
 			return
 		}
 	default:
@@ -85,8 +89,14 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Stop if no payload information was received
+	if !collection.HasPayloads() {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	// Creates a Job and put into the JobQueue for processing.
-	for _, payload := range collection.Payloads {
+	for _, payload := range collection.GetPayloads() {
 		job := Job{dialects.NewEvent(collection, payload), 1}
 		jobQueue <- &job
 	}

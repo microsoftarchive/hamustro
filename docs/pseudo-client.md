@@ -98,6 +98,7 @@ Please define the following headers for sending:
 ```
 X-Hamustro-Time: EPOCH UTC timestamp
 X-Hamustro-Signature: base64(sha256(X-Hamustro-Time + "|" + md5hex(request.body) + "|" + t.shared_secret_key))
+Content-Type: application/protobuf or application/json
 ```
 
 You can check out the proper signature generation in [Python](https://github.com/wunderlist/hamustro/blob/master/utils/message.py#L57-L62).
@@ -109,3 +110,5 @@ Send this information to `/api/v1/track`.
 It will triggered by the `t.TrackEvent()` function. It is going to send the message to the Collector if
 - the unsent payloads number is bigger or equal to the `ClientTracker`'s `queue_size` attribute,
 - or the last sync time has happened before current time minus the `ClientTracker`'s `queue_retention`.
+
+Do not send collections without payloads.

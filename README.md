@@ -85,7 +85,7 @@ $ make tests/protobuf/n # 1-25 payloads/protobuf request
 $ make tests/protobuf/1 # 1 payload/protobuf request
 ```
 
-Remember, you can use `json` instead of `protobuf` if you want. Using JSON is 10-15% slower though.
+Remember, you can use `json` instead of `protobuf` if you want. Using JSON is 50% slower though.
 
 During the stress test, you can profile the heap/cpu/goroutine usage easily in _development_ mode, just type
 
