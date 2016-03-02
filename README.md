@@ -9,9 +9,9 @@ This collector meant to be a highly available [RESTful web service](https://gith
 
 The collector is implemented in Go, runs on Ubuntu and OSX.
 
-Events are sent in [Protobuf](https://github.com/wunderlist/hamustro/blob/master/proto/payload.proto) messages.
+Events are sent in [Protobuf](https://github.com/wunderlist/hamustro/blob/master/proto/payload.proto) (recommended) or JSON messages.
 
-Currently supported cloud targets are (tested throughput on a c3.xlarge computer with 4vCPU in AWS):
+Currently supported cloud targets are (tested throughput on a c3.xlarge computer with 4vCPU in AWS using protobuf):
 
 * __Amazon Web Services Simple Notification Service__: 59k events/minute, 70 multi payload requests/s
 * __Amazon Web Services Simple Storage Service__: 6.2M events/minute, 8k payload requests/s
@@ -97,6 +97,6 @@ $ make profile/goroutine
 
 ## License
 
-Copyright © 2016, Bence Faludi.
+Copyright © 2016, Microsoft
 
 Distributed under the MIT License.

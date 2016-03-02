@@ -21,6 +21,14 @@ t = ClientTracker(
 )
 ```
 
+Hamustro client is going to attach the necessary headers when calling the collector but if you need to add extra headers, you can do the following:
+
+```cpp
+t.SetHeaders(
+  headers map[string]string
+)
+```
+
 It will generate pre-populated information for new events so it should not be calculated on adding each event.
 
 ```cpp
