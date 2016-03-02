@@ -95,14 +95,14 @@ func TestFunctionGetHost(t *testing.T) {
 func TestFunctionGetAddress(t *testing.T) {
 	t.Log("Testing address initialization")
 	config := &Config{}
-	if r := config.GetAddress(); r != "localhost:8080" {
-		t.Errorf("Expected address was %s but it was %s instead", "localhost:8080", r)
+	if r := config.GetAddress(); r != ":8080" {
+		t.Errorf("Expected address was %s but it was %s instead", ":8080", r)
 	}
 
 	os.Setenv("HAMUSTRO_PORT", "8000")
 	defer os.Unsetenv("HAMUSTRO_PORT")
-	if r := config.GetAddress(); r != "localhost:8000" {
-		t.Errorf("Expected address was %s but it was %s instead", "localhost:8000", r)
+	if r := config.GetAddress(); r != ":8000" {
+		t.Errorf("Expected address was %s but it was %s instead", ":8000", r)
 	}
 
 	os.Setenv("HAMUSTRO_HOST", "127.0.0.1")

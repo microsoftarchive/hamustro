@@ -92,7 +92,11 @@ func (c *Config) GetHost() string {
 
 // Returns the address of the application
 func (c *Config) GetAddress() string {
-	return c.GetHost() + ":" + c.GetPort()
+	host := c.GetHost()
+	if host == "localhost" {
+		return ":" + c.GetPort()
+	}
+	return host + ":" + c.GetPort()
 }
 
 // Returns the default buffer size for Buffered Storage.
