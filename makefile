@@ -34,6 +34,12 @@ hamustro: src/payload/payload.pb.go \
           src/*/*/*.go
 	go build -o $@ src/*.go
 
+hamustro_linux: src/payload/payload.pb.go \
+          src/*.go \
+          src/*/*.go \
+          src/*/*/*.go
+	CGO_ENABLED=0 GOOS=linux go build -o $@ src/*.go
+
 src/payload/payload.pb.go:
 	protoc --go_out=. proto/*.proto
 	mkdir -p $(dir $@) && mv proto/*.go $@
