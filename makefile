@@ -3,7 +3,7 @@ ifndef HAMUSTRO_SCHEMA
 endif
 
 ifndef HAMUSTRO_HOST
-  HAMUSTRO_HOST:=$(warning Please define HAMUSTRO_HOST environment variable, using default localhost")localhost
+  HAMUSTRO_HOST:=$(warning Please define HAMUSTRO_HOST environment variable, using default "localhost")localhost
 endif
 
 ifndef HAMUSTRO_PORT
