@@ -183,7 +183,7 @@ func RunBatchTestOnTrackHandler(t *testing.T, cases []*TrackHandlerTestCase, inp
 }
 
 // Tests the API
-func TestTrackHandler(t *testing.T) {
+func TestTrackHandlerRequiredSignature(t *testing.T) {
 	t.Log("Creating new workers")
 	storageClient = &SimpleStorageClient{}                          // Define the Simple Storage as a storage
 	jobQueue = make(chan *Job, 10)                                  // Creates a jobQueue
@@ -192,6 +192,7 @@ func TestTrackHandler(t *testing.T) {
 	dispatcher := NewDispatcher(2, &WorkerOptions{RetryAttempt: 5}) // Creates a dispatcher
 	dispatcher.Run()                                                // Starts the dispatcher
 	config = &Config{SharedSecret: "ultrasafesecret"}               // Creates a config
+	signatureRequired = true                                        // Set the signature to be required
 
 	if exp := 2; len(dispatcher.Workers) != exp {
 		t.Errorf("Expected worker's count was %d but it was %d instead", exp, len(dispatcher.Workers))

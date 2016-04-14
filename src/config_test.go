@@ -27,6 +27,27 @@ func TestFunctionIsValid(t *testing.T) {
 	}
 }
 
+// Testing signature requirement
+func TestFunctionIsSignatureRequired(t *testing.T) {
+	t.Log("Testing signature settings")
+	config := &Config{}
+	if r := config.IsSignatureRequired(); r != true {
+		t.Errorf("Expected signature requirements was %s but it was %s instead", true, exp)
+	}
+	config = &Config{Signature: "required"}
+	if r := config.IsSignatureRequired(); r != true {
+		t.Errorf("Expected signature requirements was %s but it was %s instead", true, exp)
+	}
+	config = &Config{Signature: "not-existing-property"}
+	if r := config.IsSignatureRequired(); r != true {
+		t.Errorf("Expected signature requirements was %s but it was %s instead", true, exp)
+	}
+	config = &Config{Signature: "optional"}
+	if r := config.IsSignatureRequired(); r != false {
+		t.Errorf("Expected signature requirements was %s but it was %s instead", false, exp)
+	}
+}
+
 // Testing worker size calculation
 func TestFunctionGetMaxWorkerSize(t *testing.T) {
 	t.Log("Testing worker size initialization")

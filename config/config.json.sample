@@ -7,6 +7,7 @@
   "buffer_size": 10000,
   "spread_buffer_size": false,
   "shared_secret": "ultrasafesecret",
+  "signature": "required|optional",
   "aqs": {
     "account": "",
     "access_key": "",

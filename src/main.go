@@ -17,6 +17,7 @@ var jobQueue chan *Job
 var storageClient dialects.StorageClient
 var verbose bool
 var isTerminating = false
+var signatureRequired bool
 var dispatcher *Dispatcher
 var JobQueue chan Job
 var Version string = "1.0dev" // Current version
@@ -41,6 +42,10 @@ func main() {
 	if !config.IsValid() {
 		log.Fatalf("Config is incomplete, please define `dialect` and `shared_secret` property")
 	}
+
+	// Set the signatureRequired variable
+	signatureRequired = config.IsSignatureRequired()
+
 	dialect, err := config.DialectConfig()
 	if err != nil {
 		log.Fatalf("Loading dialect configuration is failed: %s", err.Error())
