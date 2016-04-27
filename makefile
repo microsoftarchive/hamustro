@@ -24,6 +24,9 @@ all:
 install/%:
 	./utils/installer/_$*.sh
 
+setup:
+	$(PYC) utils/setup.py
+
 src/%.go:
 src/%/%.go:
 src/%/%/%.go:
