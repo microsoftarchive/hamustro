@@ -8,6 +8,7 @@
   "spread_buffer_size": false,
   "shared_secret": "ultrasafesecret",
   "masked_ip": false,
+  "signature": "required|optional",
   "aqs": {
     "account": "",
     "access_key": "",

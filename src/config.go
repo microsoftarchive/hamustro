@@ -26,6 +26,7 @@ type Config struct {
 	BufferSize       int        `json:"buffer_size"`
 	MaskedIP         bool       `json:"masked_ip"`
 	SpreadBufferSize bool       `json:"spread_buffer_size"`
+	Signature        string     `json:"signature"`
 	SharedSecret     string     `json:"shared_secret"`
 	AQS              aqs.Config `json:"aqs"`
 	SNS              sns.Config `json:"sns"`
@@ -49,6 +50,18 @@ func NewConfig(filename string) *Config {
 // Configuration validation
 func (c *Config) IsValid() bool {
 	return c.Dialect != "" && c.SharedSecret != ""
+}
+
+// Get Signature's status
+func (c *Config) IsSignatureRequired() bool {
+	switch c.Signature {
+	case "required":
+		return true
+	case "optional":
+		return false
+	default:
+		return true
+	}
 }
 
 // Returns the maximum worker size

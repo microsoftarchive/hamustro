@@ -95,6 +95,9 @@ type TrackHandlerInput struct {
 // Correct and incorrect header generation functions
 type HeaderFunction func(t *TrackHandlerInput, fn BodyFunction) map[string]string
 
+func GetValidHeaderWithoutSignature(t *TrackHandlerInput, fn BodyFunction) map[string]string {
+	return map[string]string{"Content-Type": t.ContentType}
+}
 func GetMissingHeader(t *TrackHandlerInput, fn BodyFunction) map[string]string {
 	return map[string]string{}
 }
@@ -121,12 +124,18 @@ func GetValidHeader(t *TrackHandlerInput, fn BodyFunction) map[string]string {
 	return map[string]string{"X-Hamustro-Time": t.Time, "X-Hamustro-Signature": GetSignature(fn(t.BodyCollection), t.Time), "Content-Type": t.ContentType}
 }
 
+// Signature values
+const Optional = 0
+const Required = 1
+const Any = 2
+
 // Track handler cases
 type TrackHandlerTestCase struct {
 	Method        string
 	GetHeader     HeaderFunction
 	GetBody       BodyFunction
 	IsTerminating bool
+	Signature     int
 	ExpectedCode  int
 	CheckResults  bool
 }
@@ -135,47 +144,50 @@ type TrackHandlerTestCase struct {
 func RunBatchTestOnTrackHandler(t *testing.T, cases []*TrackHandlerTestCase, inputs []*TrackHandlerInput) {
 	for i, c := range cases {
 		isTerminating = c.IsTerminating
-		for _, isVerbose := range []bool{true, false} {
-			verbose = isVerbose         // Sets the verbose mode
-			exp = map[string]struct{}{} // Resets the expectations dict
+		for _, signature := range map[int][]bool{Optional: []bool{false}, Required: []bool{true}, Any: []bool{true, false}}[c.Signature] {
+			signatureRequired = signature
+			for _, isVerbose := range []bool{true, false} {
+				verbose = isVerbose         // Sets the verbose mode
+				exp = map[string]struct{}{} // Resets the expectations dict
 
-			for j, b := range inputs {
-				if b.MaxTestCase <= i {
-					continue
-				}
-				t.Logf("Working on %d/%d test case with %s mode", i+1, j+1, map[bool]string{true: "verbose", false: "production"}[verbose])
-
-				// Creates a new request
-				req, _ := http.NewRequest(c.Method, "/api/v1/track", bytes.NewBuffer(c.GetBody(b.BodyCollection)))
-
-				// Set up the headers based on the predefined function
-				for key, value := range c.GetHeader(b, c.GetBody) {
-					req.Header.Set(key, value)
-				}
-				resp := httptest.NewRecorder()
-
-				// Set up the excepted jobs
-				if b.Jobs != nil && c.CheckResults {
-					for _, job := range b.Jobs {
-						SetJobExpectation([]*Job{job}, false, false)
+				for j, b := range inputs {
+					if b.MaxTestCase <= i {
+						continue
 					}
-				}
+					t.Logf("Working on %d/%d test case in %s mode %s", i+1, j+1, map[bool]string{true: "verbose", false: "production"}[verbose], map[bool]string{true: "with signature", false: "without signature"}[signature])
 
-				TrackHandler(resp, req) // Calls the API
+					// Creates a new request
+					req, _ := http.NewRequest(c.Method, "/api/v1/track", bytes.NewBuffer(c.GetBody(b.BodyCollection)))
 
-				// If we're expecting some output, we'll wait for the results
-				if b.Jobs != nil && c.CheckResults {
-					time.Sleep(150 * time.Millisecond)
-					ValidateSending()
-				}
+					// Set up the headers based on the predefined function
+					for key, value := range c.GetHeader(b, c.GetBody) {
+						req.Header.Set(key, value)
+					}
+					resp := httptest.NewRecorder()
 
-				// Log the output to double-check the test case vs reality (debug)
-				if verbose && resp.Body.Len() != 0 {
-					t.Logf("- Response's body was %s", resp.Body)
-				}
+					// Set up the excepted jobs
+					if b.Jobs != nil && c.CheckResults {
+						for _, job := range b.Jobs {
+							SetJobExpectation([]*Job{job}, false, false)
+						}
+					}
 
-				if resp.Code != c.ExpectedCode {
-					t.Errorf("Non-expected status code %d with the following body `%s`, it should be %d", resp.Code, resp.Body, c.ExpectedCode)
+					TrackHandler(resp, req) // Calls the API
+
+					// If we're expecting some output, we'll wait for the results
+					if b.Jobs != nil && c.CheckResults {
+						time.Sleep(150 * time.Millisecond)
+						ValidateSending()
+					}
+
+					// Log the output to double-check the test case vs reality (debug)
+					if verbose && resp.Body.Len() != 0 {
+						t.Logf("- Response's body was %s", resp.Body)
+					}
+
+					if resp.Code != c.ExpectedCode {
+						t.Errorf("Non-expected status code %d with the following body `%s`, it should be %d", resp.Code, resp.Body, c.ExpectedCode)
+					}
 				}
 			}
 		}
@@ -183,7 +195,7 @@ func RunBatchTestOnTrackHandler(t *testing.T, cases []*TrackHandlerTestCase, inp
 }
 
 // Tests the API
-func TestTrackHandler(t *testing.T) {
+func TestTrackHandlerRequiredSignature(t *testing.T) {
 	t.Log("Creating new workers")
 	storageClient = &SimpleStorageClient{}                          // Define the Simple Storage as a storage
 	jobQueue = make(chan *Job, 10)                                  // Creates a jobQueue
@@ -209,34 +221,39 @@ func TestTrackHandler(t *testing.T) {
 
 	RunBatchTestOnTrackHandler(t,
 		[]*TrackHandlerTestCase{
-			{"GET", GetMissingHeader, GetCollectionBody, true, http.StatusServiceUnavailable, false},              // 1. Service is shutting down
-			{"GET", GetMissingHeader, GetCollectionBody, false, http.StatusMethodNotAllowed, false},               // 2. GET is not supported
-			{"POST", GetMissingHeader, GetCollectionBody, false, http.StatusMethodNotAllowed, false},              // 3. Missing headers
-			{"POST", GetHeaderWithoutTime, GetCollectionBody, false, http.StatusMethodNotAllowed, false},          // 4. Missing X-Hamustro-rTime
-			{"POST", GetHeaderWithoutSignature, GetCollectionBody, false, http.StatusMethodNotAllowed, false},     // 5. Missing X-Hamustro-Signature
-			{"POST", GetHeaderWithoutContentType, GetCollectionBody, false, http.StatusBadRequest, false},         // 6. Content type is missing
-			{"POST", GetHeaderWithInvalidSignature, GetCollectionBody, false, http.StatusMethodNotAllowed, false}, // 7. X-Hamustro-Signature is invalid
-			{"POST", GetHeaderWithInvalidContentType, GetCollectionBody, false, http.StatusBadRequest, false},     // 8. Content type is invalid
-			{"POST", GetHeaderWithWrongContentType, GetCollectionBody, false, http.StatusBadRequest, false},       // 9. Content type is not valid for content
-			{"POST", GetValidHeader, GetDisturbedCollectionBody, false, http.StatusBadRequest, false},             // 10. Session is not valid
-			{"POST", GetValidHeader, GetIncompleteCollectionBody, false, http.StatusBadRequest, false},            // 11. Missing required parameters in the body
-			{"POST", GetValidHeader, GetCollectionBody, false, http.StatusOK, true},                               // 12. Valid message
+			{"GET", GetMissingHeader, GetCollectionBody, true, Any, http.StatusServiceUnavailable, false},                        // 1. Service is shutting down
+			{"GET", GetMissingHeader, GetCollectionBody, false, Any, http.StatusMethodNotAllowed, false},                         // 2. GET is not supported
+			{"POST", GetMissingHeader, GetCollectionBody, false, Required, http.StatusMethodNotAllowed, false},                   // 3. Missing headers with signature
+			{"POST", GetMissingHeader, GetCollectionBody, false, Optional, http.StatusBadRequest, false},                         // 4. Missing content-type without signature
+			{"POST", GetHeaderWithoutTime, GetCollectionBody, false, Any, http.StatusMethodNotAllowed, false},                    // 5. Missing X-Hamustro-rTime
+			{"POST", GetHeaderWithoutSignature, GetCollectionBody, false, Any, http.StatusMethodNotAllowed, false},               // 6. Missing X-Hamustro-Signature
+			{"POST", GetHeaderWithoutContentType, GetCollectionBody, false, Any, http.StatusBadRequest, false},                   // 7. Content type is missing
+			{"POST", GetHeaderWithInvalidSignature, GetCollectionBody, false, Any, http.StatusMethodNotAllowed, false},           // 8. X-Hamustro-Signature is invalid
+			{"POST", GetHeaderWithInvalidContentType, GetCollectionBody, false, Any, http.StatusBadRequest, false},               // 9. Content type is invalid
+			{"POST", GetHeaderWithWrongContentType, GetCollectionBody, false, Any, http.StatusBadRequest, false},                 // 10. Content type is not valid for content
+			{"POST", GetValidHeader, GetDisturbedCollectionBody, false, Any, http.StatusBadRequest, false},                       // 11. Session is not valid
+			{"POST", GetValidHeaderWithoutSignature, GetDisturbedCollectionBody, false, Optional, http.StatusBadRequest, false},  // 12. Session is not valid
+			{"POST", GetValidHeader, GetIncompleteCollectionBody, false, Any, http.StatusBadRequest, false},                      // 13. Missing required parameters in the body
+			{"POST", GetValidHeaderWithoutSignature, GetIncompleteCollectionBody, false, Optional, http.StatusBadRequest, false}, // 14. Missing required parameters in the body without signature
+			{"POST", GetValidHeader, GetCollectionBody, false, Any, http.StatusOK, true},                                         // 15. Valid message
+			{"POST", GetValidHeaderWithoutSignature, GetCollectionBody, false, Optional, http.StatusOK, true},                    // 16. Valid message without signature
 		},
 		[]*TrackHandlerInput{
-			{&TrackBodyCollection{[]byte("orange"), nil, nil}, rTime, "", nil, 8},
-			{pbSingleBody, rTime, "application/protobuf", pbSingleBodyJobs, 12},
-			{pbMultipleBody, rTime, "application/protobuf", pbMultipleBodyJobs, 12},
-			{jsonSingleBody, rTime, "application/json", jsonSingleBodyJobs, 12},
-			{jsonMultipleBody, rTime, "application/json", jsonMultipleBodyJobs, 12},
+			{&TrackBodyCollection{[]byte("orange"), nil, nil}, rTime, "", nil, 9},
+			{pbSingleBody, rTime, "application/protobuf", pbSingleBodyJobs, 16},
+			{pbMultipleBody, rTime, "application/protobuf", pbMultipleBodyJobs, 16},
+			{jsonSingleBody, rTime, "application/json", jsonSingleBodyJobs, 16},
+			{jsonMultipleBody, rTime, "application/json", jsonMultipleBodyJobs, 16},
 		})
 
 	RunBatchTestOnTrackHandler(t,
 		[]*TrackHandlerTestCase{
-			{"POST", GetValidHeader, GetCollectionBody, false, http.StatusNoContent, false}, // 1. Valid message without content
+			{"POST", GetValidHeader, GetCollectionBody, false, Any, http.StatusNoContent, false},                      // 1. Valid message without content
+			{"POST", GetValidHeaderWithoutSignature, GetCollectionBody, false, Optional, http.StatusNoContent, false}, // 2. Valid message without content without signature
 		},
 		[]*TrackHandlerInput{
-			{jsonNoBody, rTime, "application/json", jsonNoBodyJobs, 1},
-			{pbNoBody, rTime, "application/protobuf", pbNoBodyJobs, 1},
+			{jsonNoBody, rTime, "application/json", jsonNoBodyJobs, 2},
+			{pbNoBody, rTime, "application/protobuf", pbNoBodyJobs, 2},
 		})
 
 	dispatcher.Stop()
