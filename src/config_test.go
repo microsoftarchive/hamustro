@@ -196,3 +196,20 @@ func TestFunctionDialectConfig(t *testing.T) {
 		t.Errorf("Existing dialect must be found when uppercase")
 	}
 }
+
+// Testing the truncate ip functionality setting
+func TestFunctionIsMaskedIP(t *testing.T) {
+	t.Log("Testing the truncate_ip when not defined")
+	config := &Config{}
+	if exp := false; config.IsMaskedIP() != exp {
+		t.Errorf("Expected masked IP setting is %s but it was %s instead", exp, config.IsMaskedIP())
+	}
+	config = &Config{MaskedIP: false}
+	if exp := false; config.IsMaskedIP() != exp {
+		t.Errorf("Expected masked IP setting is %s but it was %s instead", exp, config.IsMaskedIP())
+	}
+	config = &Config{MaskedIP: true}
+	if exp := true; config.IsMaskedIP() != exp {
+		t.Errorf("Expected masked IP setting is %s but it was %s instead", exp, config.IsMaskedIP())
+	}
+}

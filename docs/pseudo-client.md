@@ -60,7 +60,7 @@ t.TrackEvent(
 Please set automatically 
 - the `at` uint64 attribute for the events - it must contain an EPOCH UTC timestamp (seconds, ~10 digits), 
 - the `nr` integer attribute - it must contain the serial number of this event within the session all time. So, it starts counting from the first event in the session and it never defaults for that session, not even new application open,
-- the `ip` string attribute for actual IP address.
+- the `ip` string attribute for actual IPv4 address.
 
 It'll queue up the events within the `ClientTracker`. You should store this in a persistent storage. Please make sure to save the `ClientTracker`'s attributes with the event because you will need to send to the `collector_url` by session.
 

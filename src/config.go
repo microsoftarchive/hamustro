@@ -24,6 +24,7 @@ type Config struct {
 	MaxQueueSize     int        `json:"max_queue_size"`
 	RetryAttempt     int        `json:"retry_attempt"`
 	BufferSize       int        `json:"buffer_size"`
+	MaskedIP         bool       `json:"masked_ip"`
 	SpreadBufferSize bool       `json:"spread_buffer_size"`
 	Signature        string     `json:"signature"`
 	SharedSecret     string     `json:"shared_secret"`
@@ -123,6 +124,11 @@ func (c *Config) GetBufferSize() int {
 // Returns the default spreding property
 func (c *Config) IsSpreadBuffer() bool {
 	return c.SpreadBufferSize
+}
+
+// Should we truncate the IP address
+func (c *Config) IsMaskedIP() bool {
+	return c.MaskedIP
 }
 
 // Returns the retry attempt number
