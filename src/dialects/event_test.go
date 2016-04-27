@@ -50,6 +50,26 @@ func TestEventStringConversion(t *testing.T) {
 	}
 }
 
+// Tests the IP truncating functionality
+func TestFunctionTruncateIPv4LastOctet(t *testing.T) {
+	cases := []struct {
+		IP         string
+		ExpectedIP string
+	}{
+		{"214.160.227.22", "214.160.227.0"},
+		{"214.160.227.22:80", "214.160.227.0"},
+		{"214.160.227.22/24", "214.160.227.0"},
+		{"", ""}}
+	t.Log("Removing last octet of IP address")
+	for _, c := range cases {
+		e := &Event{IP: c.IP}
+		e.TruncateIPv4LastOctet()
+		if c.ExpectedIP != e.IP {
+			t.Errorf("Expected truncated IP was %s but it was %s instead", c.ExpectedIP, e.IP)
+		}
+	}
+}
+
 // Tests the Events creation from a Collection.
 func TestNewEventCreation(t *testing.T) {
 	t.Log("Creating a new Event object from Payload and Collection")

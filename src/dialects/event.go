@@ -2,6 +2,7 @@ package dialects
 
 import (
 	"github.com/wunderlist/hamustro/src/payload"
+	"regexp"
 	"strconv"
 )
 
@@ -42,6 +43,11 @@ func NewEvent(meta *payload.Collection, payload *payload.Payload) *Event {
 		IsTesting:      payload.GetIsTesting()}
 }
 
+// Truncates the IP address
+func (event *Event) TruncateIPv4LastOctet() {
+	event.IP = regexpIP.ReplaceAllString(event.IP, "$1.0")
+}
+
 // Returns a
 func (event *Event) String() []string {
 	return []string{
@@ -59,4 +65,10 @@ func (event *Event) String() []string {
 		event.IP,
 		event.Parameters,
 		strconv.FormatBool(event.IsTesting)}
+}
+
+var regexpIP *regexp.Regexp
+
+func init() {
+	regexpIP, _ = regexp.Compile("([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\..+")
 }

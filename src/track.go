@@ -97,7 +97,11 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Creates a Job and put into the JobQueue for processing.
 	for _, payload := range collection.GetPayloads() {
-		job := Job{dialects.NewEvent(collection, payload), 1}
+		event := dialects.NewEvent(collection, payload)
+		if config.IsMaskedIP() {
+			event.TruncateIPv4LastOctet()
+		}
+		job := Job{event, 1}
 		jobQueue <- &job
 	}
 
