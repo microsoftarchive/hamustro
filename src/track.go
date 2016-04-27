@@ -40,14 +40,17 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Checks that the client want to send signature or not
+	definedSignature := r.Header.Get("X-Hamustro-Time") != "" || r.Header.Get("X-Hamustro-Signature") != ""
+
 	// If the client did not send time, we ignore
-	if r.Header.Get("X-Hamustro-Time") == "" {
+	if (signatureRequired || definedSignature) && r.Header.Get("X-Hamustro-Time") == "" {
 		BroadcastError(w, "X-Hamustro-Time header is missing", http.StatusMethodNotAllowed)
 		return
 	}
 
 	// If the client did not send signature of the message, we ignore
-	if r.Header.Get("X-Hamustro-Signature") == "" {
+	if (signatureRequired || definedSignature) && r.Header.Get("X-Hamustro-Signature") == "" {
 		BroadcastError(w, "X-Hamustro-Signature header is missing", http.StatusMethodNotAllowed)
 		return
 	}
@@ -56,7 +59,7 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 
 	// Calculate the request's signature
-	if r.Header.Get("X-Hamustro-Signature") != GetSignature(body, r.Header.Get("X-Hamustro-Time")) {
+	if (signatureRequired || definedSignature) && r.Header.Get("X-Hamustro-Signature") != GetSignature(body, r.Header.Get("X-Hamustro-Time")) {
 		BroadcastError(w, "X-Hamustro-Signature header is invalid", http.StatusMethodNotAllowed)
 		return
 	}
