@@ -95,7 +95,10 @@ func main() {
 	log.Printf("Starting server at %s", config.GetAddress())
 	http.HandleFunc("/api/v1/track", TrackHandler)
 	http.HandleFunc("/api/health", HealthHandler)
-	http.ListenAndServe(config.GetAddress(), nil)
+	http.HandleFunc("/api/flush", FlushHandler)
+	if err := http.ListenAndServe(config.GetAddress(), nil); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Runs after the server was shut down

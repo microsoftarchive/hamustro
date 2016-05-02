@@ -75,20 +75,11 @@ func (w *Worker) Work(job *Job) error {
 		log.Printf("(%d worker) Received a job request!\n", w.ID)
 	}
 	if !storageClient.IsBufferedStorage() {
-		// Convert the message to string
-		msg, err := storageClient.GetConverter()(job.Event)
-		if err != nil {
-			rerr := fmt.Errorf("(%d worker) Encoding message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
-			job.MarkAsFailed(w.RetryAttempt)
-			return rerr
+
+		if err := w.Save(job); err != nil {
+			return err
 		}
 
-		// Save message immediately.
-		if err := storageClient.Save(msg); err != nil {
-			rerr := fmt.Errorf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
-			job.MarkAsFailed(w.RetryAttempt)
-			return rerr
-		}
 	} else {
 		// Add message to the buffer if the storge is a buffered writer
 		w.AddEventToBuffer(job.Event)
@@ -98,26 +89,61 @@ func (w *Worker) Work(job *Job) error {
 			return nil
 		}
 
-		// Convert messages to string
-		msg, err := storageClient.GetBatchConverter()(w.BufferedEvents)
-		if err != nil {
-			w.IncreasePenalty()
-			return fmt.Errorf("(%d worker) Batch converting buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+		if err := w.Save(); err != nil {
+			return err
 		}
-		// Save messages
-		if err := storageClient.Save(msg); err != nil {
-			w.IncreasePenalty()
-			return fmt.Errorf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
-		}
-		w.ResetBuffer()
 	}
 	return nil
+}
+
+// Save Buffered messages
+func (w *Worker) Save() error {
+	// Convert messages to string
+	msg, err := storageClient.GetBatchConverter()(w.BufferedEvents)
+	if err != nil {
+		w.IncreasePenalty()
+		return fmt.Errorf("(%d worker) Batch converting buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+	}
+	// Save messages
+	if err := storageClient.Save(msg); err != nil {
+		w.IncreasePenalty()
+		return fmt.Errorf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+	}
+	w.ResetBuffer()
+}
+
+// Save messages
+func (w *Worker) Save(job *Job) error {
+	// Convert messages to string
+	msg, err := storageClient.GetConverter()(job.Event)
+	if err != nil {
+		rerr := fmt.Errorf("(%d worker) Encoding message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
+		job.MarkAsFailed(w.RetryAttempt)
+		return rerr
+	}
+
+	// Save message immediately.
+	if err := storageClient.Save(msg); err != nil {
+		rerr := fmt.Errorf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
+		job.MarkAsFailed(w.RetryAttempt)
+		return rerr
+	}
 }
 
 // Before the worker will be stopped it tries to rescue all ongoing job
 func (w *Worker) Rescue() error {
 	log.Printf("(%d worker) Received a signal to stop", w.ID)
+	
+	if err := w.Flush(); err != nil {
+		return err
+	}
 
+	log.Printf("(%d worker) Stopped successfully", w.ID)
+	return nil
+}
+
+// Flushing a worker
+func (w *Worker) Flush() error {
 	// We have received a signal to stop.
 	if storageClient.IsBufferedStorage() && len(w.BufferedEvents) != 0 {
 		log.Printf("(%d worker) Flushing %d buffered messages", w.ID, len(w.BufferedEvents))
@@ -133,7 +159,6 @@ func (w *Worker) Rescue() error {
 		}
 		w.ResetBuffer()
 	}
-	log.Printf("(%d worker) Stopped successfully", w.ID)
 	return nil
 }
 

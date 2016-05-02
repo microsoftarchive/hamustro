@@ -27,6 +27,7 @@ type Config struct {
 	SpreadBufferSize bool       `json:"spread_buffer_size"`
 	Signature        string     `json:"signature"`
 	SharedSecret     string     `json:"shared_secret"`
+	MaintanceKey         string     `json:"maintance_key"`
 	AQS              aqs.Config `json:"aqs"`
 	SNS              sns.Config `json:"sns"`
 	ABS              abs.Config `json:"abs"`
@@ -48,7 +49,7 @@ func NewConfig(filename string) *Config {
 
 // Configuration validation
 func (c *Config) IsValid() bool {
-	return c.Dialect != "" && c.SharedSecret != ""
+	return c.Dialect != "" && c.SharedSecret != "" && c.MaintanceKey != ""
 }
 
 // Get Signature's status

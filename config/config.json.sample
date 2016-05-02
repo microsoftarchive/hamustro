@@ -8,6 +8,7 @@
   "spread_buffer_size": false,
   "shared_secret": "ultrasafesecret",
   "signature": "required|optional",
+  "maintance_key": "mk",
   "aqs": {
     "account": "",
     "access_key": "",

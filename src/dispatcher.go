@@ -52,6 +52,13 @@ func (d *Dispatcher) Run() {
 	go d.dispatch()
 }
 
+// Flush all the workers
+func (d *Dispatcher) Flush() {
+	for i := range d.Workers {
+		d.Workers[i].Flush()
+	}
+}
+
 // Stops all the workers
 func (d *Dispatcher) Stop() {
 	var wg sync.WaitGroup
