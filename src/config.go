@@ -27,7 +27,8 @@ type Config struct {
 	SpreadBufferSize bool       `json:"spread_buffer_size"`
 	Signature        string     `json:"signature"`
 	SharedSecret     string     `json:"shared_secret"`
-	MaintanceKey         string     `json:"maintance_key"`
+	MaintanceKey     string     `json:"maintance_key"`
+	FlushTimeout     int        `json:"flush_timeout"`
 	AQS              aqs.Config `json:"aqs"`
 	SNS              sns.Config `json:"sns"`
 	ABS              abs.Config `json:"abs"`
@@ -119,6 +120,14 @@ func (c *Config) GetBufferSize() int {
 		return c.BufferSize
 	}
 	return (c.GetMaxWorkerSize() * c.GetMaxQueueSize()) * 10
+}
+
+// Returns the default flush timeout
+func (c *Config) GetFlushTimeout() int {
+	if c.FlushTimeout != 0 {
+		return c.FlushTimeout
+	}
+	return 3600
 }
 
 // Returns the default spreding property

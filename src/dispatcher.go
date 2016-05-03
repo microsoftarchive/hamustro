@@ -2,6 +2,8 @@ package main
 
 import (
 	"sync"
+	"log"
+	"time"
 )
 
 // A pool of workers channels that are registered with the dispatcher.
@@ -46,16 +48,42 @@ func (d *Dispatcher) Start() {
 	}
 }
 
+// Start automatic flush process
+func (d *Dispatcher) StartAutomaticFlush() {
+	ticker := time.NewTicker(60 * time.Second)
+	go func() {
+		for {
+			select {
+			case <- ticker.C:
+				d.AutomaticFlush()
+			}
+		}
+	}()
+}
+
+
+// Automatic flush all workers
+func (d *Dispatcher) AutomaticFlush() {
+	for i := range d.Workers {
+		if err := d.Workers[i].AutomaticFlush(); err != nil {
+			log.Print(err)
+		}
+	}
+}
+
 // Creates and starts the workers and listen for new job requests
 func (d *Dispatcher) Run() {
 	d.Start()
+	d.StartAutomaticFlush()
 	go d.dispatch()
 }
 
 // Flush all the workers
 func (d *Dispatcher) Flush() {
 	for i := range d.Workers {
-		d.Workers[i].Flush()
+		if err := d.Workers[i].Flush(); err != nil {
+			log.Print(err)
+		}
 	}
 }
 

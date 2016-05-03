@@ -5,6 +5,7 @@ import (
 	"github.com/wunderlist/hamustro/src/dialects"
 	"log"
 	"sync"
+	"time"
 )
 
 // Worker that executes the job.
@@ -17,6 +18,7 @@ type Worker struct {
 	Penalty        float32
 	RetryAttempt   int
 	IsSaving       bool
+	LastSave      time.Time
 	quit           chan *sync.WaitGroup
 }
 
@@ -38,6 +40,7 @@ func NewWorker(id int, options *WorkerOptions, workerPool chan chan *Job) *Worke
 		Penalty:        1.0,
 		RetryAttempt:   options.RetryAttempt,
 		IsSaving:       false,
+		LastSave:       time.Now(),
 		quit:           make(chan *sync.WaitGroup)}
 }
 
@@ -118,6 +121,7 @@ func (w *Worker) SaveBatch() error {
 		return fmt.Errorf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
 	}
 	w.ResetBuffer()
+	w.UpdateLastSave()
 	return nil
 }
 
@@ -137,6 +141,7 @@ func (w *Worker) Save(job *Job) error {
 		job.MarkAsFailed(w.RetryAttempt)
 		return rerr
 	}
+	w.UpdateLastSave()
 	return nil
 }
 
@@ -160,6 +165,18 @@ func (w *Worker) Flush() error {
 		
 		// Save messages
 		if err := w.SaveBatch(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Automatic flushing a worker
+func (w *Worker) AutomaticFlush() error {
+	// We have received a signal to stop.
+	if time.Now().After(w.GetNextAutomaticFlush()) {
+		
+		if err := w.Flush(); err != nil {
 			return err
 		}
 	}
@@ -207,6 +224,16 @@ func (w *Worker) AddEventToBuffer(event *dialects.Event) {
 // Set worker is saving
 func (w *Worker) SetIsSaving(isSaving bool) {
 	w.IsSaving = isSaving
+}
+
+// Update last save time
+func (w *Worker) UpdateLastSave() {
+	w.LastSave = time.Now()
+}
+
+// Returns next possible automatic flush time
+func (w *Worker) GetNextAutomaticFlush() time.Time {
+	return w.LastSave.Add(time.Duration(config.GetFlushTimeout()) * time.Second)
 }
 
 // Returns the worker's ID

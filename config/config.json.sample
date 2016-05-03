@@ -9,6 +9,7 @@
   "shared_secret": "ultrasafesecret",
   "signature": "required|optional",
   "maintance_key": "mk",
+  "flush_timeout": 3600,
   "aqs": {
     "account": "",
     "access_key": "",
