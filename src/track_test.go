@@ -83,6 +83,17 @@ func GetTestJSONCollectionBody(userId uint32, numberOfPayloads int) (*TrackBodyC
 	return t, GetJobsFromCollection(collection)
 }
 
+// Masks all of the jobs
+func MaskJobs(jobs []*Job) []*Job {
+	var returnJobs []*Job
+	for _, j := range jobs {
+		event := *j.Event
+		event.TruncateIPv4LastOctet()
+		returnJobs = append(returnJobs, &Job{&event, j.Attempt})
+	}
+	return returnJobs
+}
+
 // Input cases for the TrackHandler
 type TrackHandlerInput struct {
 	BodyCollection *TrackBodyCollection
@@ -146,47 +157,59 @@ func RunBatchTestOnTrackHandler(t *testing.T, cases []*TrackHandlerTestCase, inp
 		isTerminating = c.IsTerminating
 		for _, signature := range map[int][]bool{Optional: []bool{false}, Required: []bool{true}, Any: []bool{true, false}}[c.Signature] {
 			signatureRequired = signature
-			for _, isVerbose := range []bool{true, false} {
-				verbose = isVerbose         // Sets the verbose mode
-				exp = map[string]struct{}{} // Resets the expectations dict
+			for _, masked := range []bool{false, true} {
+				config.MaskedIP = masked
+				for _, isVerbose := range []bool{true, false} {
+					verbose = isVerbose         // Sets the verbose mode
+					exp = map[string]struct{}{} // Resets the expectations dict
 
-				for j, b := range inputs {
-					if b.MaxTestCase <= i {
-						continue
-					}
-					t.Logf("Working on %d/%d test case in %s mode %s", i+1, j+1, map[bool]string{true: "verbose", false: "production"}[verbose], map[bool]string{true: "with signature", false: "without signature"}[signature])
-
-					// Creates a new request
-					req, _ := http.NewRequest(c.Method, "/api/v1/track", bytes.NewBuffer(c.GetBody(b.BodyCollection)))
-
-					// Set up the headers based on the predefined function
-					for key, value := range c.GetHeader(b, c.GetBody) {
-						req.Header.Set(key, value)
-					}
-					resp := httptest.NewRecorder()
-
-					// Set up the excepted jobs
-					if b.Jobs != nil && c.CheckResults {
-						for _, job := range b.Jobs {
-							SetJobExpectation([]*Job{job}, false, false)
+					for j, b := range inputs {
+						if b.MaxTestCase <= i {
+							continue
 						}
-					}
+						t.Logf("Working on %d/%d test case in %s %s mode %s", i+1, j+1,
+							map[bool]string{true: "verbose", false: "production"}[verbose],
+							map[bool]string{true: "masked", false: "unmasked"}[masked],
+							map[bool]string{true: "with signature", false: "without signature"}[signature])
 
-					TrackHandler(resp, req) // Calls the API
+						// Creates a new request
+						req, _ := http.NewRequest(c.Method, "/api/v1/track", bytes.NewBuffer(c.GetBody(b.BodyCollection)))
 
-					// If we're expecting some output, we'll wait for the results
-					if b.Jobs != nil && c.CheckResults {
-						time.Sleep(150 * time.Millisecond)
-						ValidateSending()
-					}
+						// Set up the headers based on the predefined function
+						for key, value := range c.GetHeader(b, c.GetBody) {
+							req.Header.Set(key, value)
+						}
+						resp := httptest.NewRecorder()
 
-					// Log the output to double-check the test case vs reality (debug)
-					if verbose && resp.Body.Len() != 0 {
-						t.Logf("- Response's body was %s", resp.Body)
-					}
+						// Set up the excepted jobs
+						jobs := b.Jobs
+						if masked {
+							jobs = MaskJobs(jobs)
+						}
 
-					if resp.Code != c.ExpectedCode {
-						t.Errorf("Non-expected status code %d with the following body `%s`, it should be %d", resp.Code, resp.Body, c.ExpectedCode)
+						// Checks the results and sets the expectations
+						if b.Jobs != nil && c.CheckResults {
+							for _, job := range jobs {
+								SetJobExpectation([]*Job{job}, false, false)
+							}
+						}
+
+						TrackHandler(resp, req) // Calls the API
+
+						// If we're expecting some output, we'll wait for the results
+						if b.Jobs != nil && c.CheckResults {
+							time.Sleep(150 * time.Millisecond)
+							ValidateSending()
+						}
+
+						// Log the output to double-check the test case vs reality (debug)
+						if verbose && resp.Body.Len() != 0 {
+							t.Logf("- Response's body was %s", resp.Body)
+						}
+
+						if resp.Code != c.ExpectedCode {
+							t.Errorf("Non-expected status code %d with the following body `%s`, it should be %d", resp.Code, resp.Body, c.ExpectedCode)
+						}
 					}
 				}
 			}

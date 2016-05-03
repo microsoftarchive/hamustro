@@ -41,6 +41,11 @@ $ make install/utils # utils for development
 ```
 
 After the package installation, please create your configuration file based on the [sample configuration](config/config.json.sample).
+You can also generate a configuration file with the following command:
+
+```bash
+$ make setup
+```
 
 Set up your environment variables.
 
