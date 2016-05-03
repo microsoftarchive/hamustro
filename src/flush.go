@@ -36,7 +36,6 @@ func FlushHandler(w http.ResponseWriter, r *http.Request) {
 
 	// If the client did not send key of the message, we ignore
 	if r.URL.Query().Get("maintance_key") == "" {
-		BroadcastError(w, GetMaintanceKey(), http.StatusMethodNotAllowed)
 		BroadcastError(w, "Maintance key is missing", http.StatusMethodNotAllowed)
 		return
 	}

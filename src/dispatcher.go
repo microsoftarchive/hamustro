@@ -61,7 +61,6 @@ func (d *Dispatcher) StartAutomaticFlush() {
 	}()
 }
 
-
 // Automatic flush all workers
 func (d *Dispatcher) AutomaticFlush() {
 	for i := range d.Workers {
