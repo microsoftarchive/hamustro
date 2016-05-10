@@ -9,8 +9,8 @@
   "shared_secret": "ultrasafesecret",
   "masked_ip": false,
   "signature": "required|optional",
-  "maintance_key": "mk",
-  "flush_timeout": 3600,
+  "maintenance_key": "mk",
+  "auto_flush_interval": 60,
   "aqs": {
     "account": "",
     "access_key": "",

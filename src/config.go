@@ -18,22 +18,22 @@ import (
 
 // Application configuration
 type Config struct {
-	LogFile          string     `json:"logfile"`
-	Dialect          string     `json:"dialect"`
-	MaxWorkerSize    int        `json:"max_worker_size"`
-	MaxQueueSize     int        `json:"max_queue_size"`
-	RetryAttempt     int        `json:"retry_attempt"`
-	BufferSize       int        `json:"buffer_size"`
-	MaskedIP         bool       `json:"masked_ip"`
-	SpreadBufferSize bool       `json:"spread_buffer_size"`
-	Signature        string     `json:"signature"`
-	SharedSecret     string     `json:"shared_secret"`
-	MaintanceKey     string     `json:"maintance_key"`
-	FlushTimeout     int        `json:"flush_timeout"`
-	AQS              aqs.Config `json:"aqs"`
-	SNS              sns.Config `json:"sns"`
-	ABS              abs.Config `json:"abs"`
-	S3               s3.Config  `json:"s3"`
+	LogFile           string     `json:"logfile"`
+	Dialect           string     `json:"dialect"`
+	MaxWorkerSize     int        `json:"max_worker_size"`
+	MaxQueueSize      int        `json:"max_queue_size"`
+	RetryAttempt      int        `json:"retry_attempt"`
+	BufferSize        int        `json:"buffer_size"`
+	MaskedIP          bool       `json:"masked_ip"`
+	SpreadBufferSize  bool       `json:"spread_buffer_size"`
+	Signature         string     `json:"signature"`
+	SharedSecret      string     `json:"shared_secret"`
+	MaintenanceKey    string     `json:"maintenance_key"`
+	AutoFlushInterval int        `json:"auto_flush_interval"`
+	AQS               aqs.Config `json:"aqs"`
+	SNS               sns.Config `json:"sns"`
+	ABS               abs.Config `json:"abs"`
+	S3                s3.Config  `json:"s3"`
 }
 
 // Creates a new configuration object
@@ -51,7 +51,7 @@ func NewConfig(filename string) *Config {
 
 // Configuration validation
 func (c *Config) IsValid() bool {
-	return c.Dialect != "" && c.SharedSecret != "" && c.MaintanceKey != ""
+	return c.Dialect != "" && c.SharedSecret != ""
 }
 
 // Get Signature's status
@@ -124,11 +124,11 @@ func (c *Config) GetBufferSize() int {
 }
 
 // Returns the default flush timeout
-func (c *Config) GetFlushTimeout() int {
-	if c.FlushTimeout != 0 {
-		return c.FlushTimeout
+func (c *Config) GetAutoFlushInterval() int {
+	if c.AutoFlushInterval != 0 {
+		return c.AutoFlushInterval
 	}
-	return 3600
+	return 0
 }
 
 // Returns the default spreding property

@@ -2,7 +2,6 @@ package main
 
 import (
 	"sync"
-	"log"
 	"time"
 )
 
@@ -12,6 +11,11 @@ type Dispatcher struct {
 	Workers       []*Worker
 	MaxWorkers    int
 	WorkerOptions *WorkerOptions
+}
+
+// Options for worker creation
+type FlushOptions struct {
+	Automatic bool
 }
 
 // Creates a new dispatcher to handle new job requests
@@ -50,23 +54,29 @@ func (d *Dispatcher) Start() {
 
 // Start automatic flush process
 func (d *Dispatcher) StartAutomaticFlush() {
+	if config.GetAutoFlushInterval() == 0 {
+		return
+	}
 	ticker := time.NewTicker(60 * time.Second)
 	go func() {
 		for {
 			select {
-			case <- ticker.C:
-				d.AutomaticFlush()
+			case <-ticker.C:
+				d.Flush(&FlushOptions{Automatic: true})
 			}
 		}
 	}()
 }
 
-// Automatic flush all workers
-func (d *Dispatcher) AutomaticFlush() {
+// Flush all the workers
+func (d *Dispatcher) Flush(o *FlushOptions) {
 	for i := range d.Workers {
-		if err := d.Workers[i].AutomaticFlush(); err != nil {
-			log.Print(err)
+		if d.Workers[i].IsSaving == true {
+			continue
 		}
+		d.Workers[i].SetIsSaving(true)
+		d.Workers[i].Flush(o)
+		d.Workers[i].SetIsSaving(false)
 	}
 }
 
@@ -75,15 +85,6 @@ func (d *Dispatcher) Run() {
 	d.Start()
 	d.StartAutomaticFlush()
 	go d.dispatch()
-}
-
-// Flush all the workers
-func (d *Dispatcher) Flush() {
-	for i := range d.Workers {
-		if err := d.Workers[i].Flush(); err != nil {
-			log.Print(err)
-		}
-	}
 }
 
 // Stops all the workers

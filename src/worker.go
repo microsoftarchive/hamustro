@@ -18,7 +18,7 @@ type Worker struct {
 	Penalty        float32
 	RetryAttempt   int
 	IsSaving       bool
-	LastSave      time.Time
+	LastSave       time.Time
 	quit           chan *sync.WaitGroup
 }
 
@@ -54,6 +54,11 @@ func (w *Worker) Start() {
 	}
 	go func() {
 		for {
+			// Don't recieve incoming jobs while other process saving in the background.
+			if w.IsSaving == true {
+				continue
+			}
+
 			// Register the current worker into the worker queue.
 			w.WorkerPool <- w.JobChannel
 
@@ -105,10 +110,6 @@ func (w *Worker) Work(job *Job) error {
 
 // Save Buffered messages
 func (w *Worker) SaveBatch() error {
-
-	w.SetIsSaving(true)
-	defer w.SetIsSaving(false)
-
 	// Convert messages to stringdefer
 	msg, err := storageClient.GetBatchConverter()(w.BufferedEvents)
 	if err != nil {
@@ -136,7 +137,7 @@ func (w *Worker) Save(job *Job) error {
 	}
 
 	// Save message immediately.
-	if err := storageClient.Save(msg); err != nil {
+	if err := storageClient.Save(msg); err != nil || w.IsSaving == true {
 		rerr := fmt.Errorf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
 		job.MarkAsFailed(w.RetryAttempt)
 		return rerr
@@ -148,8 +149,8 @@ func (w *Worker) Save(job *Job) error {
 // Before the worker will be stopped it tries to rescue all ongoing job
 func (w *Worker) Rescue() error {
 	log.Printf("(%d worker) Received a signal to stop", w.ID)
-	
-	if err := w.Flush(); err != nil {
+
+	if err := w.Flush(&FlushOptions{Automatic: false}); err != nil {
 		return err
 	}
 
@@ -158,27 +159,18 @@ func (w *Worker) Rescue() error {
 }
 
 // Flushing a worker
-func (w *Worker) Flush() error {
-	// We have received a signal to stop.
-	if storageClient.IsBufferedStorage() && len(w.BufferedEvents) != 0 {
-		log.Printf("(%d worker) Flushing %d buffered messages", w.ID, len(w.BufferedEvents))
-		
-		// Save messages
-		if err := w.SaveBatch(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+func (w *Worker) Flush(o *FlushOptions) error {
+	if (o.Automatic == true && time.Now().After(w.GetNextAutomaticFlush())) || o.Automatic == false {
+		// We have received a signal to stop.
+		if storageClient.IsBufferedStorage() && len(w.BufferedEvents) != 0 {
+			log.Printf("(%d worker) Flushing %d buffered messages", w.ID, len(w.BufferedEvents))
 
-// Automatic flushing a worker
-func (w *Worker) AutomaticFlush() error {
-	// We have received a signal to stop.
-	if time.Now().After(w.GetNextAutomaticFlush()) {
-		
-		if err := w.Flush(); err != nil {
-			return err
+			// Save messages
+			if err := w.SaveBatch(); err != nil {
+				return err
+			}
 		}
+
 	}
 	return nil
 }
@@ -233,7 +225,7 @@ func (w *Worker) UpdateLastSave() {
 
 // Returns next possible automatic flush time
 func (w *Worker) GetNextAutomaticFlush() time.Time {
-	return w.LastSave.Add(time.Duration(config.GetFlushTimeout()) * time.Second)
+	return w.LastSave.Add(time.Duration(config.GetAutoFlushInterval()) * time.Minute)
 }
 
 // Returns the worker's ID
