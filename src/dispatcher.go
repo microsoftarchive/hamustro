@@ -12,7 +12,6 @@ type Dispatcher struct {
 	Workers       []*Worker
 	MaxWorkers    int
 	WorkerOptions *WorkerOptions
-	DelayedJobs   map[int][]Job
 }
 
 // Options for worker creation
@@ -26,8 +25,7 @@ func NewDispatcher(maxWorkers int, options *WorkerOptions) *Dispatcher {
 	return &Dispatcher{
 		WorkerPool:    pool,
 		WorkerOptions: options,
-		MaxWorkers:    maxWorkers,
-		DelayedJobs:   make(map[int][]Job)}
+		MaxWorkers:    maxWorkers}
 }
 
 // Returns the buffer size for a single worker

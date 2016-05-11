@@ -177,6 +177,8 @@ func (w *Worker) Flush() error {
 		if err := w.SaveBatch(); err != nil {
 			return err
 		}
+	} else if len(w.BufferedEvents) == 0 {
+		w.UpdateLastSave()
 	}
 	return nil
 }
