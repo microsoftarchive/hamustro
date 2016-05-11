@@ -46,7 +46,7 @@ func FlushHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Print("Flushing workers")
+	log.Print("Flush all workers ...")
 	dispatcher.Flush(&FlushOptions{Automatic: false})
 
 	w.WriteHeader(http.StatusOK)

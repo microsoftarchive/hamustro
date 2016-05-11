@@ -104,8 +104,8 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 		if config.IsMaskedIP() {
 			event.TruncateIPv4LastOctet()
 		}
-		job := Job{event, 1}
-		jobQueue <- &job
+		action := EventAction{event, 1}
+		jobQueue <- &action
 	}
 
 	// Returns with 200.

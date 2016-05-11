@@ -13,7 +13,7 @@ import (
 )
 
 var config *Config
-var jobQueue chan *Job
+var jobQueue chan Job
 var storageClient dialects.StorageClient
 var verbose bool
 var isTerminating = false
@@ -67,7 +67,7 @@ func main() {
 		SpreadBuffer: config.IsSpreadBuffer()}
 
 	// Create the background workers
-	jobQueue = make(chan *Job, config.GetMaxQueueSize())
+	jobQueue = make(chan Job, config.GetMaxQueueSize())
 	dispatcher = NewDispatcher(config.GetMaxWorkerSize(), options)
 	dispatcher.Run()
 

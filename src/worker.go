@@ -11,13 +11,12 @@ import (
 // Worker that executes the job.
 type Worker struct {
 	ID             int
-	WorkerPool     chan chan *Job
-	JobChannel     chan *Job
+	WorkerPool     chan *Worker
+	JobChannel     chan Job
 	BufferSize     int
 	BufferedEvents []*dialects.Event
 	Penalty        float32
 	RetryAttempt   int
-	IsSaving       bool
 	LastSave       time.Time
 	quit           chan *sync.WaitGroup
 }
@@ -30,16 +29,15 @@ type WorkerOptions struct {
 }
 
 // Creates a new worker
-func NewWorker(id int, options *WorkerOptions, workerPool chan chan *Job) *Worker {
+func NewWorker(id int, options *WorkerOptions, workerPool chan *Worker) *Worker {
 	return &Worker{
 		ID:             id,
 		WorkerPool:     workerPool,
-		JobChannel:     make(chan *Job),
+		JobChannel:     make(chan Job),
 		BufferSize:     options.BufferSize,
 		BufferedEvents: []*dialects.Event{},
 		Penalty:        1.0,
 		RetryAttempt:   options.RetryAttempt,
-		IsSaving:       false,
 		LastSave:       time.Now(),
 		quit:           make(chan *sync.WaitGroup)}
 }
@@ -54,18 +52,26 @@ func (w *Worker) Start() {
 	}
 	go func() {
 		for {
-			// Don't recieve incoming jobs while other process saving in the background.
-			if w.IsSaving == true {
-				continue
-			}
-
 			// Register the current worker into the worker queue.
-			w.WorkerPool <- w.JobChannel
+			w.WorkerPool <- w
 
 			select {
-			case job := <-w.JobChannel:
-				if err := w.Work(job); err != nil {
-					log.Print(err)
+			case action := <-w.JobChannel:
+				switch action.GetAction() {
+				case ACTION_EVENT:
+					if verbose {
+						log.Printf("(%d worker) Received an add new event request!\n", w.ID)
+					}
+					if err := w.Work(action.(*EventAction)); err != nil {
+						log.Print(err)
+					}
+				case ACTION_FLUSH:
+					if verbose {
+						log.Printf("(%d worker) Received a flush request!\n", w.ID)
+					}
+					if err := w.Flush(); err != nil {
+						log.Print(err)
+					}
 				}
 			case wg := <-w.quit:
 				defer wg.Done()
@@ -79,30 +85,33 @@ func (w *Worker) Start() {
 }
 
 // Work on a single job
-func (w *Worker) Work(job *Job) error {
-	// We have received a work request.
-	if verbose {
-		log.Printf("(%d worker) Received a job request!\n", w.ID)
-	}
+func (w *Worker) Work(action *EventAction) error {
 	if !storageClient.IsBufferedStorage() {
-
 		// Save messages
-		if err := w.Save(job); err != nil {
+		if err := w.Save(action); err != nil {
 			return err
 		}
 
 	} else {
 		// Add message to the buffer if the storge is a buffered writer
-		w.AddEventToBuffer(job.Event)
+		w.AddEventToBuffer(action.GetEvent())
 
 		// Continue if the buffer is not full
 		if !w.IsBufferFull() {
 			return nil
 		}
 
+		if verbose {
+			log.Printf("(%d worker) Saving buffered messages started", w.ID)
+		}
+
 		// Save messages
 		if err := w.SaveBatch(); err != nil {
 			return err
+		}
+
+		if verbose {
+			log.Printf("(%d worker) Saving buffered messages was finished", w.ID)
 		}
 	}
 	return nil
@@ -127,19 +136,19 @@ func (w *Worker) SaveBatch() error {
 }
 
 // Save messages
-func (w *Worker) Save(job *Job) error {
+func (w *Worker) Save(action *EventAction) error {
 	// Convert messages to string
-	msg, err := storageClient.GetConverter()(job.Event)
+	msg, err := storageClient.GetConverter()(action.GetEvent())
 	if err != nil {
-		rerr := fmt.Errorf("(%d worker) Encoding message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
-		job.MarkAsFailed(w.RetryAttempt)
+		rerr := fmt.Errorf("(%d worker) Encoding message is failed (%d attempt): %s", w.ID, action.Attempt, err.Error())
+		action.MarkAsFailed(w.RetryAttempt)
 		return rerr
 	}
 
 	// Save message immediately.
-	if err := storageClient.Save(msg); err != nil || w.IsSaving == true {
-		rerr := fmt.Errorf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
-		job.MarkAsFailed(w.RetryAttempt)
+	if err := storageClient.Save(msg); err != nil {
+		rerr := fmt.Errorf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, action.Attempt, err.Error())
+		action.MarkAsFailed(w.RetryAttempt)
 		return rerr
 	}
 	w.UpdateLastSave()
@@ -150,7 +159,7 @@ func (w *Worker) Save(job *Job) error {
 func (w *Worker) Rescue() error {
 	log.Printf("(%d worker) Received a signal to stop", w.ID)
 
-	if err := w.Flush(&FlushOptions{Automatic: false}); err != nil {
+	if err := w.Flush(); err != nil {
 		return err
 	}
 
@@ -159,18 +168,15 @@ func (w *Worker) Rescue() error {
 }
 
 // Flushing a worker
-func (w *Worker) Flush(o *FlushOptions) error {
-	if (o.Automatic == true && time.Now().After(w.GetNextAutomaticFlush())) || o.Automatic == false {
-		// We have received a signal to stop.
-		if storageClient.IsBufferedStorage() && len(w.BufferedEvents) != 0 {
-			log.Printf("(%d worker) Flushing %d buffered messages", w.ID, len(w.BufferedEvents))
+func (w *Worker) Flush() error {
+	// We have received a signal to stop.
+	if storageClient.IsBufferedStorage() && len(w.BufferedEvents) != 0 {
+		log.Printf("(%d worker) Flushing %d buffered messages", w.ID, len(w.BufferedEvents))
 
-			// Save messages
-			if err := w.SaveBatch(); err != nil {
-				return err
-			}
+		// Save messages
+		if err := w.SaveBatch(); err != nil {
+			return err
 		}
-
 	}
 	return nil
 }
@@ -211,11 +217,6 @@ func (w *Worker) ResetBuffer() {
 // Adds a message to the buffer
 func (w *Worker) AddEventToBuffer(event *dialects.Event) {
 	w.BufferedEvents = append(w.BufferedEvents, event)
-}
-
-// Set worker is saving
-func (w *Worker) SetIsSaving(isSaving bool) {
-	w.IsSaving = isSaving
 }
 
 // Update last save time

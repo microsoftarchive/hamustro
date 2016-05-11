@@ -1,16 +1,18 @@
 package main
 
 import (
+	"log"
 	"sync"
 	"time"
 )
 
 // A pool of workers channels that are registered with the dispatcher.
 type Dispatcher struct {
-	WorkerPool    chan chan *Job
+	WorkerPool    chan *Worker
 	Workers       []*Worker
 	MaxWorkers    int
 	WorkerOptions *WorkerOptions
+	DelayedJobs   map[int][]Job
 }
 
 // Options for worker creation
@@ -20,11 +22,12 @@ type FlushOptions struct {
 
 // Creates a new dispatcher to handle new job requests
 func NewDispatcher(maxWorkers int, options *WorkerOptions) *Dispatcher {
-	pool := make(chan chan *Job, maxWorkers)
+	pool := make(chan *Worker, maxWorkers)
 	return &Dispatcher{
 		WorkerPool:    pool,
 		WorkerOptions: options,
-		MaxWorkers:    maxWorkers}
+		MaxWorkers:    maxWorkers,
+		DelayedJobs:   make(map[int][]Job)}
 }
 
 // Returns the buffer size for a single worker
@@ -53,10 +56,7 @@ func (d *Dispatcher) Start() {
 }
 
 // Start automatic flush process
-func (d *Dispatcher) StartAutomaticFlush() {
-	if config.GetAutoFlushInterval() == 0 {
-		return
-	}
+func (d *Dispatcher) TickAutomaticFlush() {
 	ticker := time.NewTicker(60 * time.Second)
 	go func() {
 		for {
@@ -71,19 +71,19 @@ func (d *Dispatcher) StartAutomaticFlush() {
 // Flush all the workers
 func (d *Dispatcher) Flush(o *FlushOptions) {
 	for i := range d.Workers {
-		if d.Workers[i].IsSaving == true {
+		if o.Automatic == true && time.Now().Before(d.Workers[i].GetNextAutomaticFlush()) {
 			continue
 		}
-		d.Workers[i].SetIsSaving(true)
-		d.Workers[i].Flush(o)
-		d.Workers[i].SetIsSaving(false)
+		jobQueue <- &FlushAction{d.Workers[i].ID}
 	}
 }
 
 // Creates and starts the workers and listen for new job requests
 func (d *Dispatcher) Run() {
 	d.Start()
-	d.StartAutomaticFlush()
+	if config.GetAutoFlushInterval() != 0 {
+		d.TickAutomaticFlush()
+	}
 	go d.dispatch()
 }
 
@@ -97,15 +97,33 @@ func (d *Dispatcher) Stop() {
 	wg.Wait()
 }
 
+// Send the selected job to the worker
+func (d *Dispatcher) Send(job Job, attempt int64) {
+	select {
+	case worker := <-d.WorkerPool:
+		if !job.IsTargeted() || worker.ID == job.GetTargetWorkerID() {
+			worker.JobChannel <- job
+			return
+		} else {
+			if verbose {
+				log.Printf("Re-register worker because targeted job arrived (for %d worker) but got %d worker instead", job.GetTargetWorkerID(), worker.ID)
+			}
+			go func() {
+				// Try it a bit later after every failure.
+				time.Sleep(time.Duration(100*attempt) * time.Millisecond)
+				d.Send(job, attempt+1)
+			}()
+			d.WorkerPool <- worker
+		}
+	}
+}
+
 // Listening for new job requests
 func (d *Dispatcher) dispatch() {
 	for {
 		select {
 		case job := <-jobQueue:
-			select {
-			case jobChannel := <-d.WorkerPool:
-				jobChannel <- job
-			}
+			d.Send(job, 0)
 		}
 	}
 }
