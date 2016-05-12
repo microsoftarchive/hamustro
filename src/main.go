@@ -19,7 +19,6 @@ var verbose bool
 var isTerminating = false
 var signatureRequired bool
 var dispatcher *Dispatcher
-var JobQueue chan Job
 var Version string = "1.0dev" // Current version
 
 // Runs before the program starts

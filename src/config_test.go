@@ -32,19 +32,19 @@ func TestFunctionIsSignatureRequired(t *testing.T) {
 	t.Log("Testing signature settings")
 	config := &Config{}
 	if r := config.IsSignatureRequired(); r != true {
-		t.Errorf("Expected signature requirements was %s but it was %s instead", true, exp)
+		t.Errorf("Expected signature requirements was %s but it was %s instead", true, r)
 	}
 	config = &Config{Signature: "required"}
 	if r := config.IsSignatureRequired(); r != true {
-		t.Errorf("Expected signature requirements was %s but it was %s instead", true, exp)
+		t.Errorf("Expected signature requirements was %s but it was %s instead", true, r)
 	}
 	config = &Config{Signature: "not-existing-property"}
 	if r := config.IsSignatureRequired(); r != true {
-		t.Errorf("Expected signature requirements was %s but it was %s instead", true, exp)
+		t.Errorf("Expected signature requirements was %s but it was %s instead", true, r)
 	}
 	config = &Config{Signature: "optional"}
 	if r := config.IsSignatureRequired(); r != false {
-		t.Errorf("Expected signature requirements was %s but it was %s instead", false, exp)
+		t.Errorf("Expected signature requirements was %s but it was %s instead", false, r)
 	}
 }
 
@@ -211,5 +211,27 @@ func TestFunctionIsMaskedIP(t *testing.T) {
 	config = &Config{MaskedIP: true}
 	if exp := true; config.IsMaskedIP() != exp {
 		t.Errorf("Expected masked IP setting is %s but it was %s instead", exp, config.IsMaskedIP())
+	}
+}
+
+// Test the maintance key is empty
+func TestMaintanceKeyIsEmpty(t *testing.T) {
+	t.Log("Testing the maintance key when not defined")
+	config := &Config{}
+	if exp := ""; config.MaintenanceKey != exp {
+		t.Errorf("Expected maintenance key setting is %s but it was %s instead", exp, config.MaintenanceKey)
+	}
+}
+
+// Testing the auto flush interval
+func TestFunctionGetAutoFlushInterval(t *testing.T) {
+	t.Log("Testing the auto flush interval property")
+	config := &Config{}
+	if exp := 0; config.GetAutoFlushInterval() != exp {
+		t.Errorf("Expected auto flush interval was %d but it was %d instead", exp, config.GetAutoFlushInterval())
+	}
+	config = &Config{AutoFlushInterval: 30}
+	if exp := 30; config.GetAutoFlushInterval() != exp {
+		t.Errorf("Expected auto flush interval was %d but it was %d instead", exp, config.GetAutoFlushInterval())
 	}
 }
