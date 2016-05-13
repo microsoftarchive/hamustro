@@ -1,49 +1,50 @@
 package main
 
 import (
-	// 	"bytes"
-	// 	"fmt"
+	"bytes"
+	"fmt"
 	"github.com/wunderlist/hamustro/src/dialects"
 	// 	"io/ioutil"
 	// 	"log"
 	// 	"sync"
-	// 	"testing"
-	// 	"time"
+	"testing"
+	"time"
 )
 
-// // Global variables for testing (hacky)
-// var T *testing.T
-// var exp map[string]struct{}
-// var response error = nil
-// var catched bool = false
+// Global variables for testing (hacky)
+var T *testing.T
+var exp map[string]struct{}
+var response error = nil
+var catched bool = false
 
-// // Simple (not buffered) Storage Client for testing
-// type SimpleStorageClient struct{}
+// Simple (not buffered) Storage Client for testing
+type SimpleStorageClient struct{}
 
-// func (c *SimpleStorageClient) IsBufferedStorage() bool {
-// 	return false
-// }
-// func (c *SimpleStorageClient) GetConverter() dialects.Converter {
-// 	return dialects.ConvertJSON
-// }
-// func (c *SimpleStorageClient) GetBatchConverter() dialects.BatchConverter {
-// 	return nil
-// }
-// func (c *SimpleStorageClient) Save(msg *bytes.Buffer) error {
-// 	catched = true
-// 	if response != nil {
-// 		return response
-// 	}
-// 	time.Sleep(100 * time.Millisecond)
-// 	T.Logf("Validating received message within the SimpleStorageClient")
-// 	msgString := msg.String()
-// 	if _, ok := exp[msgString]; !ok {
-// 		T.Errorf("Expected message was not %s", msgString)
-// 	} else {
-// 		delete(exp, msgString)
-// 	}
-// 	return nil
-// }
+func (c *SimpleStorageClient) IsBufferedStorage() bool {
+	return false
+}
+func (c *SimpleStorageClient) GetConverter() dialects.Converter {
+	return dialects.ConvertJSON
+}
+func (c *SimpleStorageClient) GetBatchConverter() dialects.BatchConverter {
+	return nil
+}
+
+func (c *SimpleStorageClient) Save(msg *bytes.Buffer) error {
+	catched = true
+	if response != nil {
+		return response
+	}
+	time.Sleep(100 * time.Millisecond)
+	T.Logf("Validating received message within the SimpleStorageClient")
+	msgString := msg.String()
+	if _, ok := exp[msgString]; !ok {
+		T.Errorf("Expected message was not %s", msgString)
+	} else {
+		delete(exp, msgString)
+	}
+	return nil
+}
 
 // // Buffered Storage Client for testing
 // type BufferedStorageClient struct{}
@@ -162,24 +163,24 @@ func GetTestEvent(userId uint32) *dialects.Event {
 		IsTesting:      false}
 }
 
-// // Sets the jobs expectation
-// func SetJobExpectation(jobs []*Job, fail bool, resetExpectation bool) {
-// 	if fail {
-// 		response = fmt.Errorf("Error was intialized for testing")
-// 	} else {
-// 		response = nil
-// 	}
-// 	if resetExpectation {
-// 		exp = map[string]struct{}{}
-// 	}
-// 	var part *bytes.Buffer
-// 	partStr := ""
-// 	for _, job := range jobs {
-// 		part, _ = dialects.ConvertJSON(job.Event)
-// 		partStr += part.String()
-// 	}
-// 	exp[partStr] = struct{}{}
-// }
+// Sets the jobs expectation
+func SetEventExpectation(eventActions []*EventAction, fail bool, resetExpectation bool) {
+	if fail {
+		response = fmt.Errorf("Error was intialized for testing")
+	} else {
+		response = nil
+	}
+	if resetExpectation {
+		exp = map[string]struct{}{}
+	}
+	var part *bytes.Buffer
+	partStr := ""
+	for _, job := range eventActions {
+		part, _ = dialects.ConvertJSON(job.Event)
+		partStr += part.String()
+	}
+	exp[partStr] = struct{}{}
+}
 
 // // Sends a single job to job channel
 // func SendToJobChannel(workerPool chan chan *Job, jobChannel chan *Job, job *Job) chan *Job {
@@ -190,17 +191,17 @@ func GetTestEvent(userId uint32) *dialects.Event {
 // 	return jobChannel
 // }
 
-// // Validates the previous sending
-// func ValidateSending() {
-// 	if !catched {
-// 		T.Errorf("Worker didn't catch the expected job")
-// 	}
-// 	catched = false
-// }
+// Validates the previous sending
+func ValidateSending() {
+	if !catched {
+		T.Errorf("Worker didn't catch the expected job")
+	}
+	catched = false
+}
 
 // // Sets the expected result, send the message, and validate it.
 // func SetSendValidate(workerPool chan chan *Job, jobChannel chan *Job, jobs []*Job, fail bool, resetExpectation bool) chan *Job {
-// 	SetJobExpectation(jobs, fail, resetExpectation)
+// 	SetEventExpectation(jobs, fail, resetExpectation)
 // 	for _, job := range jobs {
 // 		jobChannel = SendToJobChannel(workerPool, jobChannel, job)
 // 	}
@@ -297,7 +298,7 @@ func GetTestEvent(userId uint32) *dialects.Event {
 
 // 	t.Log("Creating 3 job and send it to the worker")
 // 	jobs := []*Job{&Job{GetTestEvent(54354353), 1}, &Job{GetTestEvent(543), 1}, &Job{GetTestEvent(765342), 1}, &Job{GetTestEvent(1), 1}}
-// 	SetJobExpectation(jobs, false, true)
+// 	SetEventExpectation(jobs, false, true)
 // 	for i, job := range jobs {
 // 		if len(worker.BufferedEvents) != i {
 // 			t.Errorf("Worker's buffered events count should be %d but it was %d instead", i, len(worker.BufferedEvents))
@@ -313,7 +314,7 @@ func GetTestEvent(userId uint32) *dialects.Event {
 // 	CheckResultsForBufferedStorage(worker, 4, 1.5, 6)
 
 // 	jobs = append(jobs, []*Job{&Job{GetTestEvent(64562), 1}, &Job{GetTestEvent(13127), 1}}...)
-// 	SetJobExpectation(jobs, false, true)
+// 	SetEventExpectation(jobs, false, true)
 // 	for _, job := range jobs[4:] {
 // 		jobChannel = SendToJobChannel(pool, jobChannel, job)
 // 	}
@@ -322,7 +323,7 @@ func GetTestEvent(userId uint32) *dialects.Event {
 
 // 	t.Log("Creating a single job and send it to the worker that will stay in the buffer until the worker stops")
 // 	job := &Job{GetTestEvent(9843211), 1}
-// 	SetJobExpectation([]*Job{job}, false, true)
+// 	SetEventExpectation([]*Job{job}, false, true)
 // 	jobChannel = SendToJobChannel(pool, jobChannel, job)
 // 	CheckResultsForBufferedStorage(worker, 1, 1.0, 4)
 
@@ -344,7 +345,7 @@ func GetTestEvent(userId uint32) *dialects.Event {
 
 // 	t.Log("Creating a single job and send it to the worker that will stay in the buffer until the worker stops")
 // 	job = &Job{GetTestEvent(5435), 1}
-// 	SetJobExpectation([]*Job{job}, true, true)
+// 	SetEventExpectation([]*Job{job}, true, true)
 // 	jobChannel = SendToJobChannel(pool, jobChannel, job)
 // 	CheckResultsForBufferedStorage(worker, 1, 1.0, 4)
 
