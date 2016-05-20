@@ -138,3 +138,58 @@ func TestDispatcherListen(t *testing.T) {
 	// Stops the workers
 	dispatcher.Stop()
 }
+
+// Testing the dispatcher listen function
+func TestDispatcherFlush(t *testing.T) {
+	t.Log("Testing the dispatcher listen function")
+
+	// Define an empty config
+	config = &Config{}
+
+	// Define the job Queue and the Buffered Storage Client
+	storageClient = &BufferedStorageClient{}
+	jobQueue = make(chan Job, 10)
+
+	// Disable the logger
+	log.SetOutput(ioutil.Discard)
+
+	// Testing responses
+	T = t
+	response = nil
+	catched = false
+
+	// Creates the dispatcher and listen for new jobs
+	options := &WorkerOptions{RetryAttempt: 5, BufferSize: 3}
+	dispatcher := NewDispatcher(1, options)
+	dispatcher.Run()
+
+	if exp := 1; len(dispatcher.Workers) != exp {
+		t.Errorf("Expected worker's count was %d but it was %d instead", exp, len(dispatcher.Workers))
+	}
+
+	// Create two jobs and put it into the job queue
+	t.Log("Creating two jobs and put it into the job queue")
+	job := EventAction{GetTestEvent(636284), 1}
+	expBuffer, _ := dialects.ConvertJSON(job.Event)
+
+	exp = map[string]struct{}{expBuffer.String(): {}}
+
+	jobQueue <- &job
+
+	// Wait until both is finished
+	time.Sleep(150 * time.Millisecond)
+
+	if catched {
+		t.Errorf("Worker shouldn't catch the jobs")
+	}
+
+	dispatcher.Flush(&FlushOptions{Automatic: false})
+
+	// Wait until both is finished
+	time.Sleep(200 * time.Millisecond)
+
+	if !catched {
+		t.Errorf("Worker shouldn't catch the jobs")
+	}
+
+}
