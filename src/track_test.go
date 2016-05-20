@@ -220,6 +220,7 @@ func RunBatchTestOnTrackHandler(t *testing.T, cases []*TrackHandlerTestCase, inp
 // Tests the API
 func TestTrackHandlerRequiredSignature(t *testing.T) {
 	t.Log("Creating new workers")
+	config = &Config{}                                              // Create an empty config
 	storageClient = &SimpleStorageClient{}                          // Define the Simple Storage as a storage
 	jobQueue = make(chan Job, 10)                                   // Creates a jobQueue
 	log.SetOutput(ioutil.Discard)                                   // Disable the logger

@@ -67,7 +67,7 @@ func (c *BufferedStorageClient) Save(msg *bytes.Buffer) error {
 	T.Logf("Validating received messages within the BufferedStorageClient")
 	msgString := msg.String()
 	if _, ok := exp[msgString]; !ok {
-		T.Errorf("Expected message was not %s", msgString)
+		T.Errorf("Expected message was not %s but bazd meg", msgString)
 	} else {
 		delete(exp, msgString)
 	}
@@ -430,6 +430,16 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	CheckResultsForBufferedStorage(worker, 0, 1, 3)
 }
 
+func WaitingForWorkersToFinish(workerPool chan *Worker, workers []*Worker) {
+	var finishedWorker *Worker
+	for _, expWorker := range workers {
+		for expWorker != finishedWorker {
+			finishedWorker = <-workerPool
+			expWorker.WorkerPool <- expWorker
+		}
+	}
+}
+
 // Multiple worker tests for simple storage client
 func TestSimpleStorageClientMultipleWorker(t *testing.T) {
 	t.Log("Testing multiple worker's behaviour")
@@ -476,9 +486,8 @@ func TestSimpleStorageClientMultipleWorker(t *testing.T) {
 	worker = <-pool
 	worker.JobChannel <- &action2
 
-	// Get two new channel to wait until the previous actions are finished
-	<-pool
-	<-pool
+	// Get channel to wait until the previous actions are finished
+	WaitingForWorkersToFinish(pool, []*Worker{w1, w2})
 
 	if !catched {
 		t.Errorf("Worker didn't catch the expected actions")
@@ -491,8 +500,8 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 
 	storageClient = &BufferedStorageClient{} // Define the Buffer Storage as a storage
 	jobQueue = make(chan Job, 10)            // Creates a jobQueue
-	log.SetOutput(ioutil.Discard)            // Disable the logger
-	T, response, catched = t, nil, false     // Set properties
+	// log.SetOutput(ioutil.Discard)            // Disable the logger
+	T, response, catched = t, nil, false // Set properties
 
 	// Create a worker
 	t.Log("Creating two worker with buffer size 2 and 3")
@@ -514,12 +523,16 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 	t.Log("Creating 2 action and send it to the workers")
 	// Create two actions and send it to channels
 	action1 := EventAction{GetTestEvent(5541289), 1}
-	expBuffer1, _ := dialects.ConvertJSON(action1.Event)
+	expBuffer1, _ := storageClient.GetBatchConverter()([]*dialects.Event{action1.GetEvent()})
 
 	action2 := EventAction{GetTestEvent(7851126), 1}
-	expBuffer2, _ := dialects.ConvertJSON(action2.Event)
+	expBuffer2, _ := storageClient.GetBatchConverter()([]*dialects.Event{action2.GetEvent()})
 
-	exp = map[string]struct{}{expBuffer1.String(): {}, expBuffer2.String(): {}}
+	expBuffer3, _ := storageClient.GetBatchConverter()([]*dialects.Event{action1.GetEvent(), action2.GetEvent()})
+
+	expBuffer4, _ := storageClient.GetBatchConverter()([]*dialects.Event{action2.GetEvent(), action1.GetEvent()})
+
+	exp = map[string]struct{}{expBuffer1.String(): {}, expBuffer2.String(): {}, expBuffer3.String(): {}, expBuffer4.String(): {}}
 
 	// It should catch a different worker with the expected results
 	worker := <-pool
@@ -527,18 +540,21 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 	worker = <-pool
 	worker.JobChannel <- &action2
 
-	// Get two new channel to wait until the previous actions are finished
-	<-pool
-	<-pool
+	// Get channel to wait until the previous actions are finished
+	WaitingForWorkersToFinish(pool, []*Worker{worker1, worker2})
 
-	CheckResultsForBufferedStorage(worker1, 1, 1, 2)
-	CheckResultsForBufferedStorage(worker2, 1, 1, 3)
+	time.Sleep(100 * time.Millisecond)
+
+	if expLength := 2; len(worker1.BufferedEvents)+len(worker2.BufferedEvents) != expLength {
+		T.Errorf("Workers' buffered events count should be %d but it was %d instead", expLength, len(worker1.BufferedEvents)+len(worker2.BufferedEvents))
+	}
 
 	t.Log("Flushing the workers")
 	worker = SendFlushActionToJobChannel(pool, worker1)
 	worker = SendFlushActionToJobChannel(pool, worker2)
 
-	CheckResultsForBufferedStorage(worker1, 0, 1, 2)
-	CheckResultsForBufferedStorage(worker2, 0, 1, 3)
+	if expLength := 0; len(worker1.BufferedEvents)+len(worker2.BufferedEvents) != expLength {
+		T.Errorf("Workers' buffered events count should be %d but it was %d instead", expLength, len(worker1.BufferedEvents)+len(worker2.BufferedEvents))
+	}
 	ValidateSending()
 }
