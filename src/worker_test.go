@@ -430,6 +430,7 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	CheckResultsForBufferedStorage(worker, 0, 1, 3)
 }
 
+// Waiting for all workers to finish
 func WaitingForWorkersToFinish(workerPool chan *Worker, workers []*Worker) {
 	var finishedWorker *Worker
 	for _, expWorker := range workers {
@@ -494,7 +495,7 @@ func TestSimpleStorageClientMultipleWorker(t *testing.T) {
 	}
 }
 
-// Multiple worker tests for simple storage client
+// Multiple worker tests for buffered storage client
 func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 	t.Log("Testing multiple worker's behaviour for buffered storage")
 
@@ -503,7 +504,7 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 	log.SetOutput(ioutil.Discard)            // Disable the logger
 	T, response, catched = t, nil, false     // Set properties
 
-	// Create a worker
+	// Create workers
 	t.Log("Creating two worker with buffer size 2 and 3")
 
 	pool := make(chan *Worker, 2)
@@ -523,13 +524,12 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 	t.Log("Creating 2 action and send it to the workers")
 	// Create two actions and send it to channels
 	action1 := EventAction{GetTestEvent(5541289), 1}
-	expBuffer1, _ := storageClient.GetBatchConverter()([]*dialects.Event{action1.GetEvent()})
-
 	action2 := EventAction{GetTestEvent(7851126), 1}
+
+	// All possible expected result
+	expBuffer1, _ := storageClient.GetBatchConverter()([]*dialects.Event{action1.GetEvent()})
 	expBuffer2, _ := storageClient.GetBatchConverter()([]*dialects.Event{action2.GetEvent()})
-
 	expBuffer3, _ := storageClient.GetBatchConverter()([]*dialects.Event{action1.GetEvent(), action2.GetEvent()})
-
 	expBuffer4, _ := storageClient.GetBatchConverter()([]*dialects.Event{action2.GetEvent(), action1.GetEvent()})
 
 	exp = map[string]struct{}{expBuffer1.String(): {}, expBuffer2.String(): {}, expBuffer3.String(): {}, expBuffer4.String(): {}}
@@ -542,7 +542,6 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 
 	// Get channel to wait until the previous actions are finished
 	WaitingForWorkersToFinish(pool, []*Worker{worker1, worker2})
-
 	time.Sleep(100 * time.Millisecond)
 
 	if expLength := 2; len(worker1.BufferedEvents)+len(worker2.BufferedEvents) != expLength {

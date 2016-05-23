@@ -183,6 +183,7 @@ func TestDispatcherFlush(t *testing.T) {
 		t.Errorf("Worker shouldn't catch the jobs")
 	}
 
+	// Run an API flush
 	dispatcher.Flush(&FlushOptions{Automatic: false})
 
 	// Wait until the flush is finished
@@ -230,27 +231,27 @@ func TestDispatcherAutomaticFlush(t *testing.T) {
 
 	jobQueue <- &job
 
-	// Wait until both is finished
+	// Wait until it's finished
 	time.Sleep(150 * time.Millisecond)
 
 	if catched {
-		t.Errorf("Worker shouldn't catch the jobs")
+		t.Errorf("Worker shouldn't catch the job")
 	}
 
-	// Skipped flush
+	// Run an automatic flush
 	dispatcher.Flush(&FlushOptions{Automatic: true})
 
-	// Wait until the flush is finished
+	// Wait and check the flush isn't finished
 	time.Sleep(200 * time.Millisecond)
 
 	if catched {
-		t.Errorf("Worker shouldn't catch the jobs")
+		t.Errorf("Worker shouldn't catch the job")
 	}
 
 	// Wait until both is finished
 	time.Sleep(60 * time.Second)
 
 	if !catched {
-		t.Errorf("Worker didn't catch the jobs")
+		t.Errorf("Worker didn't catch the job")
 	}
 }

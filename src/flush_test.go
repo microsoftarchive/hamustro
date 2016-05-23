@@ -14,25 +14,24 @@ type FlushHeaderFunction func() map[string]string
 func GetMissingFlushHeader() map[string]string {
 	return map[string]string{}
 }
-
 func GetFlushHeaderWithInvalidMaintenanceKey() map[string]string {
 	return map[string]string{"X-Hamustro-Maintenance-Key": "fdsa43211"}
 }
-
 func GetValidFlushHeader() map[string]string {
 	return map[string]string{"X-Hamustro-Maintenance-Key": GetMaintenanceKey()}
 }
 
+// Correct and incorrect config generation functions
 type FlushConfigFunction func() *Config
 
 func GetEmptyConfig() *Config {
 	return &Config{}
 }
-
 func GetConfigWithMaintenanceKey() *Config {
 	return &Config{MaintenanceKey: "maintancekey"}
 }
 
+// Input cases for the FlushHandler
 type FlushHeaderTestCase struct {
 	Method        string
 	GetHeader     FlushHeaderFunction
@@ -41,6 +40,7 @@ type FlushHeaderTestCase struct {
 	GetConfig     FlushConfigFunction
 }
 
+// Executes the test cases for the given inputs
 func RunTestsOnFlushHeader(t *testing.T, cases []*FlushHeaderTestCase) {
 	for _, c := range cases {
 		config = c.GetConfig()
@@ -64,10 +64,11 @@ func RunTestsOnFlushHeader(t *testing.T, cases []*FlushHeaderTestCase) {
 	}
 }
 
+// Tests the API
 func TestFlushHeader(t *testing.T) {
 	t.Log("Test flush header")
 	config = &Config{}                                           // Creates a config
-	storageClient = &BufferedStorageClient{}                     // Define the Simple Storage as a storage
+	storageClient = &BufferedStorageClient{}                     // Define the Buffered Storage as a storage
 	jobQueue = make(chan Job, 10)                                // Creates a jobQueue
 	log.SetOutput(ioutil.Discard)                                // Disable the logger
 	T, response, catched = t, nil, false                         // Set properties for the BufferedStorageClient

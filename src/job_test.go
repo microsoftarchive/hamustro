@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// Testing the GetAction function's behaviour
 func TestFunctionGetAction(t *testing.T) {
 	t.Log("Testing the action type")
 	// Testing event action
@@ -19,6 +20,7 @@ func TestFunctionGetAction(t *testing.T) {
 	}
 }
 
+// Testing the IsTargeted function's behaviour
 func TestFunctionIsTargeted(t *testing.T) {
 	t.Log("Testing action is targeted")
 	// Testing event action
@@ -33,6 +35,7 @@ func TestFunctionIsTargeted(t *testing.T) {
 	}
 }
 
+// Testing the GetTargetWorkerID function's behaviour
 func TestFunctionGetTargetWorkerID(t *testing.T) {
 	t.Log("Testing the target worker id")
 	// Testing event action
@@ -47,6 +50,7 @@ func TestFunctionGetTargetWorkerID(t *testing.T) {
 	}
 }
 
+// Testing the GetEvent function's behaviour
 func TestFunctionGetEvent(t *testing.T) {
 	t.Log("Testing action get event")
 	// Testing event action
