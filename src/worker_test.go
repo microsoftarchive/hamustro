@@ -38,14 +38,15 @@ func (c *SimpleStorageClient) Save(msg *bytes.Buffer) error {
 	time.Sleep(100 * time.Millisecond)
 	T.Logf("Validating received message within the SimpleStorageClient")
 	msgString := msg.String()
+
+	var mutex = &sync.Mutex{}
+	mutex.Lock()
 	if _, ok := exp[msgString]; !ok {
 		T.Errorf("Expected message was not %s", msgString)
 	} else {
-		var mutex = &sync.Mutex{}
-		mutex.Lock()
 		delete(exp, msgString)
-		mutex.Unlock()
 	}
+	mutex.Unlock()
 	return nil
 }
 
