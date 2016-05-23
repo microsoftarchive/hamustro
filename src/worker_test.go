@@ -67,7 +67,7 @@ func (c *BufferedStorageClient) Save(msg *bytes.Buffer) error {
 	T.Logf("Validating received messages within the BufferedStorageClient")
 	msgString := msg.String()
 	if _, ok := exp[msgString]; !ok {
-		T.Errorf("Expected message was not %s but bazd meg", msgString)
+		T.Errorf("Expected message was not %s", msgString)
 	} else {
 		delete(exp, msgString)
 	}

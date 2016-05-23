@@ -79,6 +79,22 @@ class Setup(object):
         self.config['max_queue_size'] = int(self.q("Queue size", default=rec_worker_size*20, required=True))
 
     # void
+    def _flush(self):
+        if not self.buffered:
+            self.config['maintenance_key'] = ""
+            self.config['auto_flush_interval'] = 0
+            return
+
+        print("\nHamustro can flush events with the flush API if maintenance key is configured.")
+        self.config['maintenance_key'] = self.q("Maintenance key", default="mk", required=True) \
+            if self.OPT_BOOL[self.q("Do you want to use the flush API?", default="n", choices=self.OPT_BOOL.keys())] \
+            else ""
+        print("\nHamustro can flush periodically if automatic flush interval is configured.")
+        self.config['auto_flush_interval'] = int(self.q("Automatic flush interval", default=60, required=True) \
+            if self.OPT_BOOL[self.q("Do you want to setup automatic flush?", default="n", choices=self.OPT_BOOL.keys())] \
+            else 0)
+
+    # void
     def _buffered(self):
         print("\nHamustro's workers collect events in the memory to increase the performance.")
         self.config['buffer_size'] = int(self.q("Define the buffer size/worker", required=True))
@@ -143,6 +159,7 @@ class Setup(object):
         self._security()
         self._dialect()
         self._workers()
+        self._flush()
         self._storage()
 
         print("\nPlease set the credentials for the selected ({}) dialect:".format(self.dialect))
