@@ -50,7 +50,7 @@ func main() {
 		log.Fatalf("Loading dialect configuration is failed: %s", err.Error())
 	}
 	if !dialect.IsValid() {
-		log.Fatalf("Dialect configuration is incorrect or incomplete: %s", err.Error())
+		log.Fatalf("Dialect configuration is incorrect or incomplete")
 	}
 
 	// Construct the dialect's client

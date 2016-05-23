@@ -41,7 +41,10 @@ func (c *SimpleStorageClient) Save(msg *bytes.Buffer) error {
 	if _, ok := exp[msgString]; !ok {
 		T.Errorf("Expected message was not %s", msgString)
 	} else {
+		var mutex = &sync.Mutex{}
+		mutex.Lock()
 		delete(exp, msgString)
+		mutex.Unlock()
 	}
 	return nil
 }
