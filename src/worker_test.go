@@ -500,8 +500,8 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 
 	storageClient = &BufferedStorageClient{} // Define the Buffer Storage as a storage
 	jobQueue = make(chan Job, 10)            // Creates a jobQueue
-	// log.SetOutput(ioutil.Discard)            // Disable the logger
-	T, response, catched = t, nil, false // Set properties
+	log.SetOutput(ioutil.Discard)            // Disable the logger
+	T, response, catched = t, nil, false     // Set properties
 
 	// Create a worker
 	t.Log("Creating two worker with buffer size 2 and 3")
