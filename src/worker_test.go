@@ -78,6 +78,27 @@ func (c *BufferedStorageClient) Save(msg *bytes.Buffer) error {
 	return nil
 }
 
+// Buffered Storage Client for testing
+type BufferedStorageClientWithoutExpected struct{}
+
+func (c *BufferedStorageClientWithoutExpected) IsBufferedStorage() bool {
+	return true
+}
+func (c *BufferedStorageClientWithoutExpected) GetConverter() dialects.Converter {
+	return nil
+}
+func (c *BufferedStorageClientWithoutExpected) GetBatchConverter() dialects.BatchConverter {
+	return dialects.ConvertBatchJSON
+}
+func (c *BufferedStorageClientWithoutExpected) Save(msg *bytes.Buffer) error {
+	catched = true
+	if response != nil {
+		return response
+	}
+	T.Logf("Validating received messages within the BufferedStorageClient")
+	return nil
+}
+
 // Worker Id testing with NewWorker
 func TestFunctionGetIdAndNewWorker(t *testing.T) {
 	jobQueue = make(chan Job, 10)

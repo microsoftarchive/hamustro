@@ -4,6 +4,7 @@ import (
 	"github.com/wunderlist/hamustro/src/dialects"
 	"io/ioutil"
 	"log"
+	// "sync"
 	"testing"
 	"time"
 )
@@ -89,20 +90,11 @@ func TestFunctionDispatcherGetBufferSize(t *testing.T) {
 func TestDispatcherListen(t *testing.T) {
 	t.Log("Testing the dispatcher listen function")
 
-	// Define an empty config
-	config = &Config{}
-
-	// Define the job Queue and the Buffered Storage Client
-	storageClient = &SimpleStorageClient{}
-	jobQueue = make(chan Job, 10)
-
-	// Disable the logger
-	log.SetOutput(ioutil.Discard)
-
-	// Testing responses
-	T = t
-	response = nil
-	catched = false
+	config = &Config{}                     // Define an empty config
+	storageClient = &SimpleStorageClient{} // Define the Simple Storage as a storage
+	jobQueue = make(chan Job, 10)          //Define the job Queue
+	log.SetOutput(ioutil.Discard)          // Disable the logger
+	T, response, catched = t, nil, false   // Set properties
 
 	// Creates the dispatcher and listen for new jobs
 	options := &WorkerOptions{RetryAttempt: 5}
@@ -143,20 +135,11 @@ func TestDispatcherListen(t *testing.T) {
 func TestDispatcherFlush(t *testing.T) {
 	t.Log("Testing the dispatcher flush function")
 
-	// Define an empty config
-	config = &Config{}
-
-	// Define the job Queue and the Buffered Storage Client
-	storageClient = &BufferedStorageClient{}
-	jobQueue = make(chan Job, 10)
-
-	// Disable the logger
-	log.SetOutput(ioutil.Discard)
-
-	// Testing responses
-	T = t
-	response = nil
-	catched = false
+	config = &Config{}                       // Define an empty config
+	storageClient = &BufferedStorageClient{} // Define the Buffered Storage as a storage
+	jobQueue = make(chan Job, 10)            //Define the job Queue
+	log.SetOutput(ioutil.Discard)            // Disable the logger
+	T, response, catched = t, nil, false     // Set properties
 
 	// Creates the dispatcher and listen for new jobs
 	options := &WorkerOptions{RetryAttempt: 5, BufferSize: 3}
@@ -198,20 +181,11 @@ func TestDispatcherFlush(t *testing.T) {
 func TestDispatcherAutomaticFlush(t *testing.T) {
 	t.Log("Testing the dispatcher automatic flush function")
 
-	// Define an empty config
-	config = &Config{AutoFlushInterval: 5}
-
-	// Define the job Queue and the Buffered Storage Client
-	storageClient = &BufferedStorageClient{}
-	jobQueue = make(chan Job, 10)
-
-	// Disable the logger
-	log.SetOutput(ioutil.Discard)
-
-	// Testing responses
-	T = t
-	response = nil
-	catched = false
+	config = &Config{AutoFlushInterval: 5}   // Define the config
+	storageClient = &BufferedStorageClient{} // Define the Buffered Storage as a storage
+	jobQueue = make(chan Job, 10)            //Define the job Queue
+	log.SetOutput(ioutil.Discard)            // Disable the logger
+	T, response, catched = t, nil, false     // Set properties
 
 	// Creates the dispatcher and listen for new jobs
 	options := &WorkerOptions{RetryAttempt: 5, BufferSize: 3}
@@ -254,4 +228,100 @@ func TestDispatcherAutomaticFlush(t *testing.T) {
 	if !catched {
 		t.Errorf("Worker didn't catch the job")
 	}
+}
+
+// Testing the dispatcher listen function
+func TestDispatcherWaitingForFlush(t *testing.T) {
+	t.Log("Testing the dispatcher automatic flush function")
+
+	config = &Config{}                                      // Define an empty config
+	storageClient = &BufferedStorageClientWithoutExpected{} // Define the Simple Storage as a storage
+	jobQueue = make(chan Job, 10)                           //Define the job Queue
+	log.SetOutput(ioutil.Discard)                           // Disable the logger
+	T, response, catched = t, nil, false                    // Set properties
+
+	pool := make(chan *Worker, 2)
+	workerOptions := &WorkerOptions{BufferSize: 10}
+
+	t.Log("Create two worker, and start the first one")
+	worker1 := NewWorker(1, workerOptions, pool)
+	worker1.Start()
+
+	worker2 := NewWorker(2, workerOptions, pool)
+	// worker2.Start()
+
+	t.Log("Create a dispatcher")
+	dispatcher := &Dispatcher{
+		WorkerPool:    pool,
+		WorkerOptions: workerOptions,
+		MaxWorkers:    2,
+	}
+
+	dispatcher.Workers = append(dispatcher.Workers, worker1)
+	dispatcher.Workers = append(dispatcher.Workers, worker2)
+
+	go dispatcher.dispatch()
+
+	t.Log("Create two event, and send these to the workers")
+	action1 := EventAction{GetTestEvent(33344), 1}
+	action2 := EventAction{GetTestEvent(88829), 1}
+
+	worker1.JobChannel <- &action1
+	go func() { worker2.JobChannel <- &action2 }()
+
+	// Wait until worker1 catch the job
+	time.Sleep(150 * time.Millisecond)
+
+	CheckResultsForBufferedStorage(worker1, 1, 1.0, 10)
+	CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
+
+	t.Log("Flush the workers")
+	dispatcher.Flush(&FlushOptions{Automatic: false})
+
+	// Wait until worker1 flush finish
+	time.Sleep(150 * time.Millisecond)
+
+	ValidateSending()
+	CheckResultsForBufferedStorage(worker1, 0, 1.0, 10)
+	CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
+
+	t.Log("Create two new event, and send these to the workers")
+	action3 := EventAction{GetTestEvent(11122), 1}
+	action4 := EventAction{GetTestEvent(88765), 1}
+
+	jobQueue <- &action3
+	jobQueue <- &action4
+
+	// Wait until worker1 flush finish
+	time.Sleep(200 * time.Millisecond)
+
+	CheckResultsForBufferedStorage(worker1, 2, 1.0, 10)
+	CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
+
+	if catched {
+		t.Errorf("Worker shouldn't catch the job")
+	}
+
+	t.Log("Start the second worker")
+	worker2.Start()
+
+	time.Sleep(300 * time.Millisecond)
+	// Wait until worker2 catch their jobs
+	CheckResultsForBufferedStorage(worker1, 2, 1.0, 10)
+	CheckResultsForBufferedStorage(worker2, 1, 1.0, 10)
+
+	time.Sleep(1 * time.Second)
+	ValidateSending()
+	CheckResultsForBufferedStorage(worker1, 2, 1.0, 10)
+	CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
+
+	// // Stop the distpatcher
+	// var wg sync.WaitGroup
+	// wg.Add(2)
+	// worker1.Stop(&wg)
+	// worker2.Stop(&wg)
+	// wg.Wait()
+	// ValidateSending()
+	// CheckResultsForBufferedStorage(worker1, 0, 1.0, 10)
+	// CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
 }
