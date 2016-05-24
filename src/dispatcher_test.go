@@ -236,7 +236,7 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 
 	config = &Config{}                                      // Define an empty config
 	storageClient = &BufferedStorageClientWithoutExpected{} // Define the Simple Storage as a storage
-	jobQueue = make(chan Job, 10)                           //Define the job Queue
+	jobQueue = make(chan Job, 10)                           // Define the job Queue
 	log.SetOutput(ioutil.Discard)                           // Disable the logger
 	T, response, catched = t, nil, false                    // Set properties
 

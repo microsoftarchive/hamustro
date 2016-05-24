@@ -538,7 +538,7 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 	worker1 := NewWorker(1, &WorkerOptions{BufferSize: 2}, pool)
 	worker1.Start()
 
-	worker2 := NewWorker(1, &WorkerOptions{BufferSize: 3}, pool)
+	worker2 := NewWorker(2, &WorkerOptions{BufferSize: 3}, pool)
 	worker2.Start()
 
 	t.Log("Creating 2 action and send it to the workers")
@@ -549,16 +549,14 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 	// All possible expected result
 	expBuffer1, _ := storageClient.GetBatchConverter()([]*dialects.Event{action1.GetEvent()})
 	expBuffer2, _ := storageClient.GetBatchConverter()([]*dialects.Event{action2.GetEvent()})
-	expBuffer3, _ := storageClient.GetBatchConverter()([]*dialects.Event{action1.GetEvent(), action2.GetEvent()})
-	expBuffer4, _ := storageClient.GetBatchConverter()([]*dialects.Event{action2.GetEvent(), action1.GetEvent()})
 
-	exp = map[string]struct{}{expBuffer1.String(): {}, expBuffer2.String(): {}, expBuffer3.String(): {}, expBuffer4.String(): {}}
+	exp = map[string]struct{}{expBuffer1.String(): {}, expBuffer2.String(): {}}
 
 	// It should catch a different worker with the expected results
-	worker := <-pool
-	worker.JobChannel <- &action1
-	worker = <-pool
-	worker.JobChannel <- &action2
+	new_worker1 := <-pool
+	new_worker2 := <-pool
+	new_worker1.JobChannel <- &action1
+	new_worker2.JobChannel <- &action2
 
 	// Get channel to wait until the previous actions are finished
 	WaitingForWorkersToFinish(pool, []*Worker{worker1, worker2})
@@ -569,8 +567,8 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 	}
 
 	t.Log("Flushing the workers")
-	worker = SendFlushActionToJobChannel(pool, worker1)
-	worker = SendFlushActionToJobChannel(pool, worker2)
+	_ = SendFlushActionToJobChannel(pool, worker1)
+	_ = SendFlushActionToJobChannel(pool, worker2)
 
 	if expLength := 0; len(worker1.BufferedEvents)+len(worker2.BufferedEvents) != expLength {
 		T.Errorf("Workers' buffered events count should be %d but it was %d instead", expLength, len(worker1.BufferedEvents)+len(worker2.BufferedEvents))
