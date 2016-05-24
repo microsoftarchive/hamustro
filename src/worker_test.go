@@ -470,12 +470,6 @@ func TestSimpleStorageClientMultipleWorker(t *testing.T) {
 	w2 := NewWorker(2, &WorkerOptions{RetryAttempt: 3}, pool)
 	w2.Start()
 
-	// Stop the worker on the end
-	var wg sync.WaitGroup
-	wg.Add(2)
-	defer w1.Stop(&wg)
-	defer w2.Stop(&wg)
-
 	// Create two actions and send it to channels
 	action1 := EventAction{GetTestEvent(1262473173), 1}
 	expBuffer1, _ := dialects.ConvertJSON(action1.Event)
@@ -497,6 +491,13 @@ func TestSimpleStorageClientMultipleWorker(t *testing.T) {
 	if !catched {
 		t.Errorf("Worker didn't catch the expected actions")
 	}
+
+	// Stop the worker on the end
+	var wg sync.WaitGroup
+	wg.Add(2)
+	w1.Stop(&wg)
+	w2.Stop(&wg)
+	wg.Wait()
 }
 
 // Multiple worker tests for buffered storage client
@@ -518,12 +519,6 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 
 	worker2 := NewWorker(1, &WorkerOptions{BufferSize: 3}, pool)
 	worker2.Start()
-
-	// Stop the worker on the end
-	var wg sync.WaitGroup
-	wg.Add(2)
-	defer worker1.Stop(&wg)
-	defer worker2.Stop(&wg)
 
 	t.Log("Creating 2 action and send it to the workers")
 	// Create two actions and send it to channels
@@ -560,4 +555,11 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 		T.Errorf("Workers' buffered events count should be %d but it was %d instead", expLength, len(worker1.BufferedEvents)+len(worker2.BufferedEvents))
 	}
 	ValidateSending()
+
+	// Stop the worker on the end
+	var wg sync.WaitGroup
+	wg.Add(2)
+	worker1.Stop(&wg)
+	worker2.Stop(&wg)
+	wg.Wait()
 }
