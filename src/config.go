@@ -46,6 +46,7 @@ func NewConfig(filename string) *Config {
 	if err := json.Unmarshal(file, &config); err != nil {
 		log.Fatal(err)
 	}
+	config.UpdateAutoFlushIntervalToSeconds()
 	return &config
 }
 
@@ -123,12 +124,9 @@ func (c *Config) GetBufferSize() int {
 	return (c.GetMaxWorkerSize() * c.GetMaxQueueSize()) * 10
 }
 
-// Returns the default flush timeout
-func (c *Config) GetAutoFlushInterval() int {
-	if c.AutoFlushInterval != 0 {
-		return c.AutoFlushInterval
-	}
-	return 0
+// Update automatic flush interval to seconds
+func (c *Config) UpdateAutoFlushIntervalToSeconds() {
+	c.AutoFlushInterval = c.AutoFlushInterval * 60
 }
 
 // Returns the default spreding property

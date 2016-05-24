@@ -199,7 +199,7 @@ func TestDispatcherAutomaticFlush(t *testing.T) {
 	t.Log("Testing the dispatcher automatic flush function")
 
 	// Define an empty config
-	config = &Config{AutoFlushInterval: 1}
+	config = &Config{AutoFlushInterval: 5}
 
 	// Define the job Queue and the Buffered Storage Client
 	storageClient = &BufferedStorageClient{}
@@ -249,7 +249,7 @@ func TestDispatcherAutomaticFlush(t *testing.T) {
 	}
 
 	// Wait until both is finished
-	time.Sleep(60 * time.Second)
+	time.Sleep(6 * time.Second)
 
 	if !catched {
 		t.Errorf("Worker didn't catch the job")

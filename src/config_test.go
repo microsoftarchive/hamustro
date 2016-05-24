@@ -223,15 +223,20 @@ func TestMaintanceKeyIsEmpty(t *testing.T) {
 	}
 }
 
-// Testing the auto flush interval
-func TestFunctionGetAutoFlushInterval(t *testing.T) {
+// Testing the auto flush interval update function
+func TestFunctionUpdateAutoFlushIntervalToSeconds(t *testing.T) {
 	t.Log("Testing the auto flush interval property")
 	config := &Config{}
-	if exp := 0; config.GetAutoFlushInterval() != exp {
-		t.Errorf("Expected auto flush interval was %d but it was %d instead", exp, config.GetAutoFlushInterval())
+	if exp := 0; config.AutoFlushInterval != exp {
+		t.Errorf("Expected auto flush interval was %d but it was %d instead", exp, config.AutoFlushInterval)
 	}
 	config = &Config{AutoFlushInterval: 30}
-	if exp := 30; config.GetAutoFlushInterval() != exp {
-		t.Errorf("Expected auto flush interval was %d but it was %d instead", exp, config.GetAutoFlushInterval())
+	if exp := 30; config.AutoFlushInterval != exp {
+		t.Errorf("Expected auto flush interval was %d but it was %d instead", exp, config.AutoFlushInterval)
+	}
+	config = &Config{AutoFlushInterval: 60}
+	config.UpdateAutoFlushIntervalToSeconds()
+	if exp := 3600; config.AutoFlushInterval != exp {
+		t.Errorf("Expected auto flush interval was %d but it was %d instead", exp, config.AutoFlushInterval)
 	}
 }

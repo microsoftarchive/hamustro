@@ -228,7 +228,7 @@ func (w *Worker) UpdateLastSave() {
 
 // Returns next possible automatic flush time
 func (w *Worker) GetNextAutomaticFlush() time.Time {
-	return w.LastSave.Add(time.Duration(config.GetAutoFlushInterval()) * time.Minute)
+	return w.LastSave.Add(time.Duration(config.AutoFlushInterval) * time.Second)
 }
 
 // Returns the worker's ID

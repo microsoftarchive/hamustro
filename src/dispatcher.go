@@ -55,7 +55,11 @@ func (d *Dispatcher) Start() {
 
 // Start automatic flush process
 func (d *Dispatcher) TickAutomaticFlush() {
-	ticker := time.NewTicker(60 * time.Second)
+	tickerInterval := 60
+	if config.AutoFlushInterval < 60 {
+		tickerInterval = 5
+	}
+	ticker := time.NewTicker(time.Duration(tickerInterval) * time.Second)
 	go func() {
 		for {
 			select {
@@ -79,7 +83,7 @@ func (d *Dispatcher) Flush(o *FlushOptions) {
 // Creates and starts the workers and listen for new job requests
 func (d *Dispatcher) Run() {
 	d.Start()
-	if config.GetAutoFlushInterval() != 0 {
+	if config.AutoFlushInterval != 0 {
 		d.TickAutomaticFlush()
 	}
 	go d.dispatch()
