@@ -322,7 +322,7 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 	CheckResultsForBufferedStorage(running_worker, 2, 1.0, 10)
 	CheckResultsForBufferedStorage(stopped_worker, 0, 1.0, 10)
 
-	// Stop the workers and flush the remaining events
+	// Stop the workers and flush the events
 	var wg sync.WaitGroup
 	wg.Add(2)
 	worker1.Stop(&wg)

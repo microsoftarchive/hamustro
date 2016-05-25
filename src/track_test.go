@@ -198,7 +198,7 @@ func RunBatchTestOnTrackHandler(t *testing.T, cases []*TrackHandlerTestCase, inp
 
 						// If we're expecting some output, we'll wait for the results
 						if b.Jobs != nil && c.CheckResults {
-							time.Sleep(200 * time.Millisecond)
+							time.Sleep(250 * time.Millisecond)
 							ValidateSending()
 						}
 
