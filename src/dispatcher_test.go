@@ -250,21 +250,20 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 		MaxWorkers:    2,
 	}
 
-	t.Log(dispatcher)
-
-	t.Log("Create two worker, and start the first one")
+	t.Log("Create two worker, and start these")
 	worker1 := NewWorker(1, workerOptions, dispatcher.WorkerPool)
 	worker1.Start()
 
 	worker2 := NewWorker(2, workerOptions, dispatcher.WorkerPool)
 	worker2.Start()
 
+	// Append workers to the dispatcher
 	dispatcher.Workers = append(dispatcher.Workers, worker1)
 	dispatcher.Workers = append(dispatcher.Workers, worker2)
 
 	go dispatcher.dispatch()
 
-	t.Log("Create two event, and send these to the workers")
+	t.Log("Create two events, and send these to the workers")
 	action1 := EventAction{GetTestEvent(33344), 1}
 	action2 := EventAction{GetTestEvent(88829), 1}
 
@@ -273,19 +272,18 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 	worker1.JobChannel <- &action1
 	worker2.JobChannel <- &action2
 
-	// Wait until worker1 catch the job
+	// Wait until the workers catch the job
 	time.Sleep(150 * time.Millisecond)
 
 	CheckResultsForBufferedStorage(worker1, 1, 1.0, 10)
 	CheckResultsForBufferedStorage(worker2, 1, 1.0, 10)
 
+	t.Log("Stop one of the workers")
 	stopped_worker := <-dispatcher.WorkerPool
 	running_worker := worker2
 	if worker1.ID != stopped_worker.ID {
 		running_worker = worker1
 	}
-	t.Logf("Stopped worker: %d", stopped_worker.ID)
-	t.Logf("Running worker: %d", running_worker.ID)
 
 	t.Log("Flush the workers")
 	dispatcher.Flush(&FlushOptions{Automatic: false})
@@ -297,7 +295,7 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 	CheckResultsForBufferedStorage(running_worker, 0, 1.0, 10)
 	CheckResultsForBufferedStorage(stopped_worker, 1, 1.0, 10)
 
-	t.Log("Create two new event, and send these to the workers")
+	t.Log("Create two new event, and send these to the free worker")
 	action3 := EventAction{GetTestEvent(11122), 1}
 	action4 := EventAction{GetTestEvent(88765), 1}
 
@@ -307,6 +305,7 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 	// Wait until worker1 flush finish
 	time.Sleep(200 * time.Millisecond)
 
+	// The running worker should catch the jobs
 	CheckResultsForBufferedStorage(running_worker, 2, 1.0, 10)
 	CheckResultsForBufferedStorage(stopped_worker, 1, 1.0, 10)
 
@@ -317,12 +316,13 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 	t.Log("Start the second worker")
 	dispatcher.WorkerPool <- stopped_worker
 
+	// The second worker should catch the flush job
 	time.Sleep(1 * time.Second)
 	ValidateSending()
 	CheckResultsForBufferedStorage(running_worker, 2, 1.0, 10)
 	CheckResultsForBufferedStorage(stopped_worker, 0, 1.0, 10)
 
-	// Stop the distpatcher
+	// Stop the workers and flush the remaining events
 	var wg sync.WaitGroup
 	wg.Add(2)
 	worker1.Stop(&wg)
