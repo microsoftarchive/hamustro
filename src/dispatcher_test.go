@@ -4,7 +4,7 @@ import (
 	"github.com/wunderlist/hamustro/src/dialects"
 	"io/ioutil"
 	"log"
-	// "sync"
+	"sync"
 	"testing"
 	"time"
 )
@@ -243,19 +243,21 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 	pool := make(chan *Worker, 2)
 	workerOptions := &WorkerOptions{BufferSize: 10}
 
-	t.Log("Create two worker, and start the first one")
-	worker1 := NewWorker(1, workerOptions, pool)
-	worker1.Start()
-
-	worker2 := NewWorker(2, workerOptions, pool)
-	// worker2.Start()
-
 	t.Log("Create a dispatcher")
 	dispatcher := &Dispatcher{
 		WorkerPool:    pool,
 		WorkerOptions: workerOptions,
 		MaxWorkers:    2,
 	}
+
+	t.Log(dispatcher)
+
+	t.Log("Create two worker, and start the first one")
+	worker1 := NewWorker(1, workerOptions, dispatcher.WorkerPool)
+	worker1.Start()
+
+	worker2 := NewWorker(2, workerOptions, dispatcher.WorkerPool)
+	worker2.Start()
 
 	dispatcher.Workers = append(dispatcher.Workers, worker1)
 	dispatcher.Workers = append(dispatcher.Workers, worker2)
@@ -266,14 +268,24 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 	action1 := EventAction{GetTestEvent(33344), 1}
 	action2 := EventAction{GetTestEvent(88829), 1}
 
+	<-dispatcher.WorkerPool
+	<-dispatcher.WorkerPool
 	worker1.JobChannel <- &action1
-	go func() { worker2.JobChannel <- &action2 }()
+	worker2.JobChannel <- &action2
 
 	// Wait until worker1 catch the job
 	time.Sleep(150 * time.Millisecond)
 
 	CheckResultsForBufferedStorage(worker1, 1, 1.0, 10)
-	CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
+	CheckResultsForBufferedStorage(worker2, 1, 1.0, 10)
+
+	stopped_worker := <-dispatcher.WorkerPool
+	running_worker := worker2
+	if worker1.ID != stopped_worker.ID {
+		running_worker = worker1
+	}
+	t.Logf("Stopped worker: %d", stopped_worker.ID)
+	t.Logf("Running worker: %d", running_worker.ID)
 
 	t.Log("Flush the workers")
 	dispatcher.Flush(&FlushOptions{Automatic: false})
@@ -282,8 +294,8 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 	time.Sleep(150 * time.Millisecond)
 
 	ValidateSending()
-	CheckResultsForBufferedStorage(worker1, 0, 1.0, 10)
-	CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
+	CheckResultsForBufferedStorage(running_worker, 0, 1.0, 10)
+	CheckResultsForBufferedStorage(stopped_worker, 1, 1.0, 10)
 
 	t.Log("Create two new event, and send these to the workers")
 	action3 := EventAction{GetTestEvent(11122), 1}
@@ -295,33 +307,28 @@ func TestDispatcherWaitingForFlush(t *testing.T) {
 	// Wait until worker1 flush finish
 	time.Sleep(200 * time.Millisecond)
 
-	CheckResultsForBufferedStorage(worker1, 2, 1.0, 10)
-	CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
+	CheckResultsForBufferedStorage(running_worker, 2, 1.0, 10)
+	CheckResultsForBufferedStorage(stopped_worker, 1, 1.0, 10)
 
 	if catched {
 		t.Errorf("Worker shouldn't catch the job")
 	}
 
 	t.Log("Start the second worker")
-	worker2.Start()
-
-	time.Sleep(300 * time.Millisecond)
-	// Wait until worker2 catch their jobs
-	CheckResultsForBufferedStorage(worker1, 2, 1.0, 10)
-	CheckResultsForBufferedStorage(worker2, 1, 1.0, 10)
+	dispatcher.WorkerPool <- stopped_worker
 
 	time.Sleep(1 * time.Second)
 	ValidateSending()
-	CheckResultsForBufferedStorage(worker1, 2, 1.0, 10)
-	CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
+	CheckResultsForBufferedStorage(running_worker, 2, 1.0, 10)
+	CheckResultsForBufferedStorage(stopped_worker, 0, 1.0, 10)
 
-	// // Stop the distpatcher
-	// var wg sync.WaitGroup
-	// wg.Add(2)
-	// worker1.Stop(&wg)
-	// worker2.Stop(&wg)
-	// wg.Wait()
-	// ValidateSending()
-	// CheckResultsForBufferedStorage(worker1, 0, 1.0, 10)
-	// CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
+	// Stop the distpatcher
+	var wg sync.WaitGroup
+	wg.Add(2)
+	worker1.Stop(&wg)
+	worker2.Stop(&wg)
+	wg.Wait()
+	ValidateSending()
+	CheckResultsForBufferedStorage(worker1, 0, 1.0, 10)
+	CheckResultsForBufferedStorage(worker2, 0, 1.0, 10)
 }

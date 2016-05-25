@@ -57,7 +57,7 @@ func (d *Dispatcher) Start() {
 func (d *Dispatcher) TickAutomaticFlush() {
 	tickerInterval := 60
 	if config.AutoFlushInterval < 60 {
-		tickerInterval = 5
+		tickerInterval = config.AutoFlushInterval
 	}
 	ticker := time.NewTicker(time.Duration(tickerInterval) * time.Second)
 	go func() {
