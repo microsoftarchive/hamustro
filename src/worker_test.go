@@ -17,6 +17,11 @@ var exp map[string]struct{}
 var response error = nil
 var catched bool = false
 
+var waitingForSendFinish bool = false
+var sendWg sync.WaitGroup
+
+// var sendChannelDone = make(chan bool, 1)
+
 // Simple (not buffered) Storage Client for testing
 type SimpleStorageClient struct{}
 
@@ -39,14 +44,14 @@ func (c *SimpleStorageClient) Save(msg *bytes.Buffer) error {
 	T.Logf("Validating received message within the SimpleStorageClient")
 	msgString := msg.String()
 
-	var mutex = &sync.Mutex{}
-	mutex.Lock()
 	if _, ok := exp[msgString]; !ok {
 		T.Errorf("Expected message was not %s", msgString)
 	} else {
 		delete(exp, msgString)
 	}
-	mutex.Unlock()
+	if waitingForSendFinish == true {
+		sendWg.Done()
+	}
 	return nil
 }
 

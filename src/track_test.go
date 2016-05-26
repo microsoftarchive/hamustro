@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
 // Input collections for the test cases
@@ -189,16 +188,18 @@ func RunBatchTestOnTrackHandler(t *testing.T, cases []*TrackHandlerTestCase, inp
 
 						// Checks the results and sets the expectations
 						if b.Jobs != nil && c.CheckResults {
+							waitingForSendFinish = true
 							for _, job := range jobs {
+								sendWg.Add(1)
 								SetEventExpectation([]*EventAction{job}, false, false)
 							}
 						}
-
 						TrackHandler(resp, req) // Calls the API
 
 						// If we're expecting some output, we'll wait for the results
 						if b.Jobs != nil && c.CheckResults {
-							time.Sleep(250 * time.Millisecond)
+							sendWg.Wait()
+							waitingForSendFinish = false
 							ValidateSending()
 						}
 
