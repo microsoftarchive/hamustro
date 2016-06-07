@@ -83,7 +83,7 @@ func (d *Dispatcher) Flush(o *FlushOptions) {
 // Creates and starts the workers and listen for new job requests
 func (d *Dispatcher) Run() {
 	d.Start()
-	if config.AutoFlushInterval != 0 {
+	if config.AutoFlushInterval != 0 && storageClient.IsBufferedStorage() {
 		d.TickAutomaticFlush()
 	}
 	go d.dispatch()

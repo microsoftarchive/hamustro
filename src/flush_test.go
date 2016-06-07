@@ -85,5 +85,4 @@ func TestFlushHeader(t *testing.T) {
 			{"POST", GetFlushHeaderWithInvalidMaintenanceKey, false, http.StatusMethodNotAllowed, GetConfigWithMaintenanceKey},
 			{"POST", GetValidFlushHeader, false, http.StatusOK, GetConfigWithMaintenanceKey},
 		})
-
 }

@@ -6,10 +6,6 @@ import (
 	"testing"
 )
 
-// TODO: Testing a configuration loading from a file
-func TestFunctionNewConfig(t *testing.T) {
-}
-
 // Testing the configuration file is valid or not
 func TestFunctionIsValid(t *testing.T) {
 	t.Log("Testing configs")
@@ -29,22 +25,19 @@ func TestFunctionIsValid(t *testing.T) {
 
 // Testing signature requirement
 func TestFunctionIsSignatureRequired(t *testing.T) {
-	t.Log("Testing signature settings")
-	config := &Config{}
-	if r := config.IsSignatureRequired(); r != true {
-		t.Errorf("Expected signature requirements was %s but it was %s instead", true, r)
-	}
-	config = &Config{Signature: "required"}
-	if r := config.IsSignatureRequired(); r != true {
-		t.Errorf("Expected signature requirements was %s but it was %s instead", true, r)
-	}
-	config = &Config{Signature: "not-existing-property"}
-	if r := config.IsSignatureRequired(); r != true {
-		t.Errorf("Expected signature requirements was %s but it was %s instead", true, r)
-	}
-	config = &Config{Signature: "optional"}
-	if r := config.IsSignatureRequired(); r != false {
-		t.Errorf("Expected signature requirements was %s but it was %s instead", false, r)
+	cases := []struct {
+		Config         *Config
+		ExpectedResult bool
+	}{
+		{&Config{}, true},
+		{&Config{Signature: "required"}, true},
+		{&Config{Signature: "not-existing-property"}, true},
+		{&Config{Signature: "optional"}, false}}
+
+	for _, c := range cases {
+		if r := c.Config.IsSignatureRequired(); r != c.ExpectedResult {
+			t.Errorf("Expected signature requirements was %s but it was %s instead", c.ExpectedResult, r)
+		}
 	}
 }
 
@@ -148,18 +141,18 @@ func TestFunctionGetBufferSize(t *testing.T) {
 
 // Testing the spreading property
 func TestFunctionIsSpreadBuffer(t *testing.T) {
-	t.Log("Testing the spreading property for buffered storage")
-	config := &Config{}
-	if exp := false; config.IsSpreadBuffer() != exp {
-		t.Errorf("Expected spreading buffer %s but it was %s instead", exp, config.IsSpreadBuffer())
-	}
-	config = &Config{SpreadBufferSize: false}
-	if exp := false; config.IsSpreadBuffer() != exp {
-		t.Errorf("Expected spreading buffer %s but it was %s instead", exp, config.IsSpreadBuffer())
-	}
-	config = &Config{SpreadBufferSize: true}
-	if exp := true; config.IsSpreadBuffer() != exp {
-		t.Errorf("Expected spreading buffer %s but it was %s instead", exp, config.IsSpreadBuffer())
+	cases := []struct {
+		Config         *Config
+		ExpectedResult bool
+	}{
+		{&Config{}, false},
+		{&Config{SpreadBufferSize: false}, false},
+		{&Config{SpreadBufferSize: true}, true}}
+
+	for _, c := range cases {
+		if r := c.Config.IsSpreadBuffer(); r != c.ExpectedResult {
+			t.Errorf("Expected spread buffer was %s but it was %s instead", c.ExpectedResult, r)
+		}
 	}
 }
 
@@ -215,7 +208,7 @@ func TestFunctionIsMaskedIP(t *testing.T) {
 }
 
 // Test the maintance key is empty
-func TestMaintanceKeyIsEmpty(t *testing.T) {
+func TestFunctionMaintanceKeyIsEmpty(t *testing.T) {
 	t.Log("Testing the maintance key when not defined")
 	config := &Config{}
 	if exp := ""; config.MaintenanceKey != exp {

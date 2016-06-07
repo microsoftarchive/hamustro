@@ -16,11 +16,8 @@ var T *testing.T
 var exp map[string]struct{}
 var response error = nil
 var catched bool = false
-
 var waitingForSendFinish bool = false
 var sendWg sync.WaitGroup
-
-// var sendChannelDone = make(chan bool, 1)
 
 // Simple (not buffered) Storage Client for testing
 type SimpleStorageClient struct{}
@@ -258,18 +255,17 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	log.SetOutput(ioutil.Discard)          // Disable the logger
 	T, response, catched = t, nil, false   // Set properties
 
-	// Create a worker
 	t.Log("Creating a single worker")
 	pool := make(chan *Worker, 1)
 	worker := NewWorker(1, &WorkerOptions{RetryAttempt: 2}, pool)
 	worker.Start()
 
-	// Stop the worker on the end
+	t.Log("Set up to stop the worker on the end")
 	var wg sync.WaitGroup
 	wg.Add(1)
 	defer worker.Stop(&wg)
 
-	// Start the test
+	t.Log("Register the worker in to the worker pool")
 	worker = <-pool
 
 	t.Log("Creating a single action and send it to the worker")
@@ -309,7 +305,7 @@ func TestSimpleStorageClientWorker(t *testing.T) {
 	}
 
 	t.Log("Flush a simple storage")
-	worker = SendFlushActionToJobChannel(pool, worker)
+	SendFlushActionToJobChannel(pool, worker)
 }
 
 // Tests the results of the buffered storage worker's test
@@ -333,16 +329,15 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	log.SetOutput(ioutil.Discard)            // Disable the logger
 	T, response, catched = t, nil, false     // Set properties
 
-	// Create a worker
 	t.Log("Creating a single worker with buffer size: 4")
 	pool := make(chan *Worker, 1)
 	worker := NewWorker(1, &WorkerOptions{BufferSize: 4}, pool)
 	worker.Start()
 
-	// Start the test
+	t.Log("Grab the worker from the pool")
 	worker = <-pool
 
-	t.Log("Creating 4 job and send it to the worker")
+	t.Log("Creating 4 actions and send it to the worker")
 	actions := []*EventAction{&EventAction{GetTestEvent(54354353), 1}, &EventAction{GetTestEvent(543), 1}, &EventAction{GetTestEvent(765342), 1}, &EventAction{GetTestEvent(1), 1}}
 	SetEventExpectation(actions, false, true)
 	for i, action := range actions {
@@ -354,7 +349,7 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	ValidateSending()
 	CheckResultsForBufferedStorage(worker, 0, 1.0, 4)
 
-	t.Log("Creating 6 action and send it to the worker, during the process it'll fail after the 4th and will be accepted after the 6th")
+	t.Log("Creating 6 actions and send it to the worker, during the process it'll fail after the 4th and will be accepted after the 6th")
 	actions = []*EventAction{&EventAction{GetTestEvent(423), 1}, &EventAction{GetTestEvent(654645), 1}, &EventAction{GetTestEvent(123123), 1}, &EventAction{GetTestEvent(16548), 1}}
 	SetSendValidate(pool, worker, actions, true, true)
 	CheckResultsForBufferedStorage(worker, 4, 1.5, 6)
@@ -380,13 +375,12 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	ValidateSending()
 	CheckResultsForBufferedStorage(worker, 0, 1.0, 4)
 
-	// Create a worker again
 	t.Log("Creating a single worker again with buffer size: 4")
 	pool = make(chan *Worker, 1)
 	worker = NewWorker(1, &WorkerOptions{BufferSize: 4}, pool)
 	worker.Start()
 
-	// Grab a channel
+	t.Log("Grab a free worker again from the pool")
 	worker = <-pool
 
 	t.Log("Creating a single action and send it to the worker that will stay in the buffer until the worker stops")
@@ -402,16 +396,15 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	ValidateSending()
 	CheckResultsForBufferedStorage(worker, 1, 1.5, 6)
 
-	// Create a worker again
 	t.Log("Creating a single worker again with buffer size: 4")
 	pool = make(chan *Worker, 1)
 	worker = NewWorker(1, &WorkerOptions{BufferSize: 4}, pool)
 	worker.Start()
 
-	// Grab a channel
+	t.Log("Grab a free worker again from the pool")
 	worker = <-pool
 
-	t.Log("Creating 3 action and send it to the worker, during the process the worker gets a flush action")
+	t.Log("Creating 3 actions and send it to the worker, during the process the worker gets a flush action")
 	actions = []*EventAction{&EventAction{GetTestEvent(4223), 1}, &EventAction{GetTestEvent(66666), 1}, &EventAction{GetTestEvent(969482), 1}}
 	SetEventExpectation(actions, false, true)
 	for _, action := range actions {
@@ -428,67 +421,39 @@ func TestBufferedStorageClientWorker(t *testing.T) {
 	wg.Wait()
 	CheckResultsForBufferedStorage(worker, 0, 1, 4)
 
-	// Create a worker again
-	t.Log("Creating a single worker again with buffer size: 4")
+	t.Log("Creating a single worker again with buffer size: 3")
 	pool = make(chan *Worker, 1)
 	worker = NewWorker(1, &WorkerOptions{BufferSize: 3}, pool)
 	worker.Start()
 
-	// Grab a channel
+	t.Log("Grab a free worker again from the pool")
 	worker = <-pool
 
-	t.Log("Creating 4 action and send it to the worker, during the process the worker gets a flush action")
+	t.Log("Creating 3 actions and send it to the worker, it will be saved successfully")
 	actions = []*EventAction{&EventAction{GetTestEvent(7632), 1}, &EventAction{GetTestEvent(3423), 1}, &EventAction{GetTestEvent(23), 1}}
 	SetSendValidate(pool, worker, actions, false, true)
-	CheckResultsForBufferedStorage(worker, 0, 1, 3)
+	CheckResultsForBufferedStorage(worker, 0, 1.0, 3)
 
-	actions = append(actions, []*EventAction{&EventAction{GetTestEvent(7532233), 1}}...)
-	SetEventExpectation(actions, false, true)
-	for _, action := range actions[3:] {
-		worker = SendEventActionToJobChannel(pool, worker, action)
-	}
+	t.Log("Create a single action and send it to the worker")
+	action = &EventAction{GetTestEvent(7532233), 1}
+	SetEventExpectation([]*EventAction{action}, false, true)
+	worker = SendEventActionToJobChannel(pool, worker, action)
 	CheckResultsForBufferedStorage(worker, 1, 1.0, 3)
 
+	t.Log("Send a flush action and check that the buffer size will be empty")
 	worker = SendFlushActionToJobChannel(pool, worker)
 	CheckResultsForBufferedStorage(worker, 0, 1, 3)
 	ValidateSending()
-
-	t.Log("Stop the worker and write out the current buffer that will fail and the message will be lost")
-	wg.Add(1)
-	worker.Stop(&wg)
-	wg.Wait()
-	CheckResultsForBufferedStorage(worker, 0, 1, 3)
-}
-
-// Waiting for all workers to finish
-func WaitingForWorkersToFinish(workerPool chan *Worker, workers []*Worker) {
-	var finishedWorker *Worker
-	for _, expWorker := range workers {
-		for expWorker != finishedWorker {
-			finishedWorker = <-workerPool
-			expWorker.WorkerPool <- expWorker
-		}
-	}
 }
 
 // Multiple worker tests for simple storage client
 func TestSimpleStorageClientMultipleWorker(t *testing.T) {
-	t.Log("Testing multiple worker's behaviour")
+	storageClient = &SimpleStorageClient{} // Define the Buffer Storage as a storage
+	jobQueue = make(chan Job, 10)          // Creates a jobQueue
+	log.SetOutput(ioutil.Discard)          // Disable the logger
+	T, response, catched = t, nil, false   // Set properties
 
-	// Disable the logger
-	log.SetOutput(ioutil.Discard)
-
-	// Define the action Queue and the Buffered Storage Client
-	jobQueue = make(chan Job, 10)
-	storageClient = &SimpleStorageClient{}
-
-	// Make testing.T and the response global
-	T = t
-	response = nil
-	catched = false
-
-	// Create a worker
-	t.Log("Creating two worker to compete with each other")
+	t.Log("Creating two workers to compete with each other")
 	pool := make(chan *Worker, 2)
 	w1 := NewWorker(1, &WorkerOptions{RetryAttempt: 3}, pool)
 	w1.Start()
@@ -496,7 +461,7 @@ func TestSimpleStorageClientMultipleWorker(t *testing.T) {
 	w2 := NewWorker(2, &WorkerOptions{RetryAttempt: 3}, pool)
 	w2.Start()
 
-	// Create two actions and send it to channels
+	t.Log("Create two actions")
 	action1 := EventAction{GetTestEvent(1262473173), 1}
 	expBuffer1, _ := dialects.ConvertJSON(action1.Event)
 
@@ -505,20 +470,20 @@ func TestSimpleStorageClientMultipleWorker(t *testing.T) {
 
 	exp = map[string]struct{}{expBuffer1.String(): {}, expBuffer2.String(): {}}
 
-	// It should catch a different worker with the expected results
+	t.Log("Send the actions to different workers")
 	worker := <-pool
 	worker.JobChannel <- &action1
 	worker = <-pool
 	worker.JobChannel <- &action2
 
-	// Get channel to wait until the previous actions are finished
-	WaitingForWorkersToFinish(pool, []*Worker{w1, w2})
-
+	t.Log("Get channel to wait until the previous actions are finished")
+	<-pool
+	<-pool
 	if !catched {
 		t.Errorf("Worker didn't catch the expected actions")
 	}
 
-	// Stop the worker on the end
+	t.Log("Stop the worker on the end")
 	var wg sync.WaitGroup
 	wg.Add(2)
 	w1.Stop(&wg)
@@ -528,16 +493,12 @@ func TestSimpleStorageClientMultipleWorker(t *testing.T) {
 
 // Multiple worker tests for buffered storage client
 func TestBufferedStorageClientMultipleWorker(t *testing.T) {
-	t.Log("Testing multiple worker's behaviour for buffered storage")
-
 	storageClient = &BufferedStorageClient{} // Define the Buffer Storage as a storage
 	jobQueue = make(chan Job, 10)            // Creates a jobQueue
 	log.SetOutput(ioutil.Discard)            // Disable the logger
 	T, response, catched = t, nil, false     // Set properties
 
-	// Create workers
 	t.Log("Creating two worker with buffer size 2 and 3")
-
 	pool := make(chan *Worker, 2)
 
 	worker1 := NewWorker(1, &WorkerOptions{BufferSize: 2}, pool)
@@ -546,41 +507,40 @@ func TestBufferedStorageClientMultipleWorker(t *testing.T) {
 	worker2 := NewWorker(2, &WorkerOptions{BufferSize: 3}, pool)
 	worker2.Start()
 
-	t.Log("Creating 2 action and send it to the workers")
-	// Create two actions and send it to channels
+	t.Log("Creating 2 actions")
 	action1 := EventAction{GetTestEvent(5541289), 1}
 	action2 := EventAction{GetTestEvent(7851126), 1}
 
-	// All possible expected result
+	t.Log("Set up all of the possible results")
 	expBuffer1, _ := storageClient.GetBatchConverter()([]*dialects.Event{action1.GetEvent()})
 	expBuffer2, _ := storageClient.GetBatchConverter()([]*dialects.Event{action2.GetEvent()})
 
 	exp = map[string]struct{}{expBuffer1.String(): {}, expBuffer2.String(): {}}
 
-	// It should catch a different worker with the expected results
+	t.Log("Grab the workers and send the actions to different workers")
 	new_worker1 := <-pool
 	new_worker2 := <-pool
 	new_worker1.JobChannel <- &action1
 	new_worker2.JobChannel <- &action2
 
-	// Get channel to wait until the previous actions are finished
-	WaitingForWorkersToFinish(pool, []*Worker{worker1, worker2})
-	time.Sleep(100 * time.Millisecond)
+	t.Log("Get channel to wait until the previous actions are finished")
+	<-pool
+	<-pool
 
 	if expLength := 2; len(worker1.BufferedEvents)+len(worker2.BufferedEvents) != expLength {
 		T.Errorf("Workers' buffered events count should be %d but it was %d instead", expLength, len(worker1.BufferedEvents)+len(worker2.BufferedEvents))
 	}
 
-	t.Log("Flushing the workers")
-	_ = SendFlushActionToJobChannel(pool, worker1)
-	_ = SendFlushActionToJobChannel(pool, worker2)
+	t.Log("Flushing the workers and both worker should be empty")
+	SendFlushActionToJobChannel(pool, worker1)
+	SendFlushActionToJobChannel(pool, worker2)
 
 	if expLength := 0; len(worker1.BufferedEvents)+len(worker2.BufferedEvents) != expLength {
 		T.Errorf("Workers' buffered events count should be %d but it was %d instead", expLength, len(worker1.BufferedEvents)+len(worker2.BufferedEvents))
 	}
 	ValidateSending()
 
-	// Stop the worker on the end
+	t.Log("Stop the workers")
 	var wg sync.WaitGroup
 	wg.Add(2)
 	worker1.Stop(&wg)
