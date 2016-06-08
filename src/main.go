@@ -13,14 +13,13 @@ import (
 )
 
 var config *Config
-var jobQueue chan *Job
+var jobQueue chan Job
 var storageClient dialects.StorageClient
 var verbose bool
 var isTerminating = false
 var signatureRequired bool
 var dispatcher *Dispatcher
-var JobQueue chan Job
-var Version string = "1.0dev" // Current version
+var Version string = "1.0rc" // Current version
 
 // Runs before the program starts
 func main() {
@@ -51,7 +50,7 @@ func main() {
 		log.Fatalf("Loading dialect configuration is failed: %s", err.Error())
 	}
 	if !dialect.IsValid() {
-		log.Fatalf("Dialect configuration is incorrect or incomplete: %s", err.Error())
+		log.Fatalf("Dialect configuration is incorrect or incomplete")
 	}
 
 	// Construct the dialect's client
@@ -67,7 +66,7 @@ func main() {
 		SpreadBuffer: config.IsSpreadBuffer()}
 
 	// Create the background workers
-	jobQueue = make(chan *Job, config.GetMaxQueueSize())
+	jobQueue = make(chan Job, config.GetMaxQueueSize())
 	dispatcher = NewDispatcher(config.GetMaxWorkerSize(), options)
 	dispatcher.Run()
 
@@ -95,7 +94,10 @@ func main() {
 	log.Printf("Starting server at %s", config.GetAddress())
 	http.HandleFunc("/api/v1/track", TrackHandler)
 	http.HandleFunc("/api/health", HealthHandler)
-	http.ListenAndServe(config.GetAddress(), nil)
+	http.HandleFunc("/api/flush", FlushHandler)
+	if err := http.ListenAndServe(config.GetAddress(), nil); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Runs after the server was shut down

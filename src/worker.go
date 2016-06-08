@@ -5,17 +5,19 @@ import (
 	"github.com/wunderlist/hamustro/src/dialects"
 	"log"
 	"sync"
+	"time"
 )
 
 // Worker that executes the job.
 type Worker struct {
 	ID             int
-	WorkerPool     chan chan *Job
-	JobChannel     chan *Job
+	WorkerPool     chan *Worker
+	JobChannel     chan Job
 	BufferSize     int
 	BufferedEvents []*dialects.Event
 	Penalty        float32
 	RetryAttempt   int
+	LastSave       time.Time
 	quit           chan *sync.WaitGroup
 }
 
@@ -27,15 +29,16 @@ type WorkerOptions struct {
 }
 
 // Creates a new worker
-func NewWorker(id int, options *WorkerOptions, workerPool chan chan *Job) *Worker {
+func NewWorker(id int, options *WorkerOptions, workerPool chan *Worker) *Worker {
 	return &Worker{
 		ID:             id,
 		WorkerPool:     workerPool,
-		JobChannel:     make(chan *Job),
+		JobChannel:     make(chan Job),
 		BufferSize:     options.BufferSize,
 		BufferedEvents: []*dialects.Event{},
 		Penalty:        1.0,
 		RetryAttempt:   options.RetryAttempt,
+		LastSave:       time.Now(),
 		quit:           make(chan *sync.WaitGroup)}
 }
 
@@ -50,12 +53,25 @@ func (w *Worker) Start() {
 	go func() {
 		for {
 			// Register the current worker into the worker queue.
-			w.WorkerPool <- w.JobChannel
+			w.WorkerPool <- w
 
 			select {
-			case job := <-w.JobChannel:
-				if err := w.Work(job); err != nil {
-					log.Print(err)
+			case action := <-w.JobChannel:
+				switch action.GetAction() {
+				case ACTION_EVENT:
+					if verbose {
+						log.Printf("(%d worker) Received an add new event request!\n", w.ID)
+					}
+					if err := w.Work(action.(*EventAction)); err != nil {
+						log.Print(err)
+					}
+				case ACTION_FLUSH:
+					if verbose {
+						log.Printf("(%d worker) Received a flush request!\n", w.ID)
+					}
+					if err := w.Flush(); err != nil {
+						log.Print(err)
+					}
 				}
 			case wg := <-w.quit:
 				defer wg.Done()
@@ -69,48 +85,73 @@ func (w *Worker) Start() {
 }
 
 // Work on a single job
-func (w *Worker) Work(job *Job) error {
-	// We have received a work request.
-	if verbose {
-		log.Printf("(%d worker) Received a job request!\n", w.ID)
-	}
+func (w *Worker) Work(action *EventAction) error {
 	if !storageClient.IsBufferedStorage() {
-		// Convert the message to string
-		msg, err := storageClient.GetConverter()(job.Event)
-		if err != nil {
-			rerr := fmt.Errorf("(%d worker) Encoding message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
-			job.MarkAsFailed(w.RetryAttempt)
-			return rerr
+		// Save messages
+		if err := w.Save(action); err != nil {
+			return err
 		}
 
-		// Save message immediately.
-		if err := storageClient.Save(msg); err != nil {
-			rerr := fmt.Errorf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, job.Attempt, err.Error())
-			job.MarkAsFailed(w.RetryAttempt)
-			return rerr
-		}
 	} else {
 		// Add message to the buffer if the storge is a buffered writer
-		w.AddEventToBuffer(job.Event)
+		w.AddEventToBuffer(action.GetEvent())
 
 		// Continue if the buffer is not full
 		if !w.IsBufferFull() {
 			return nil
 		}
 
-		// Convert messages to string
-		msg, err := storageClient.GetBatchConverter()(w.BufferedEvents)
-		if err != nil {
-			w.IncreasePenalty()
-			return fmt.Errorf("(%d worker) Batch converting buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+		if verbose {
+			log.Printf("(%d worker) Saving buffered messages started", w.ID)
 		}
+
 		// Save messages
-		if err := storageClient.Save(msg); err != nil {
-			w.IncreasePenalty()
-			return fmt.Errorf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+		if err := w.SaveBatch(); err != nil {
+			return err
 		}
-		w.ResetBuffer()
+
+		if verbose {
+			log.Printf("(%d worker) Saving buffered messages was finished", w.ID)
+		}
 	}
+	return nil
+}
+
+// Save Buffered messages
+func (w *Worker) SaveBatch() error {
+	// Convert messages to stringdefer
+	msg, err := storageClient.GetBatchConverter()(w.BufferedEvents)
+	if err != nil {
+		w.IncreasePenalty()
+		return fmt.Errorf("(%d worker) Batch converting buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+	}
+	// Save messages
+	if err := storageClient.Save(msg); err != nil {
+		w.IncreasePenalty()
+		return fmt.Errorf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+	}
+	w.ResetBuffer()
+	w.UpdateLastSave()
+	return nil
+}
+
+// Save messages
+func (w *Worker) Save(action *EventAction) error {
+	// Convert messages to string
+	msg, err := storageClient.GetConverter()(action.GetEvent())
+	if err != nil {
+		rerr := fmt.Errorf("(%d worker) Encoding message is failed (%d attempt): %s", w.ID, action.Attempt, err.Error())
+		action.MarkAsFailed(w.RetryAttempt)
+		return rerr
+	}
+
+	// Save message immediately.
+	if err := storageClient.Save(msg); err != nil {
+		rerr := fmt.Errorf("(%d worker) Saving message is failed (%d attempt): %s", w.ID, action.Attempt, err.Error())
+		action.MarkAsFailed(w.RetryAttempt)
+		return rerr
+	}
+	w.UpdateLastSave()
 	return nil
 }
 
@@ -118,22 +159,27 @@ func (w *Worker) Work(job *Job) error {
 func (w *Worker) Rescue() error {
 	log.Printf("(%d worker) Received a signal to stop", w.ID)
 
+	if err := w.Flush(); err != nil {
+		return err
+	}
+
+	log.Printf("(%d worker) Stopped successfully", w.ID)
+	return nil
+}
+
+// Flushing a worker
+func (w *Worker) Flush() error {
 	// We have received a signal to stop.
 	if storageClient.IsBufferedStorage() && len(w.BufferedEvents) != 0 {
 		log.Printf("(%d worker) Flushing %d buffered messages", w.ID, len(w.BufferedEvents))
 
-		// Convert messages to string
-		msg, err := storageClient.GetBatchConverter()(w.BufferedEvents)
-		if err != nil {
-			return fmt.Errorf("(%d worker) Batch converting buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
-		}
 		// Save messages
-		if err := storageClient.Save(msg); err != nil {
-			return fmt.Errorf("(%d worker) Saving buffered messages is failed with %d records: %s", w.ID, len(w.BufferedEvents), err.Error())
+		if err := w.SaveBatch(); err != nil {
+			return err
 		}
-		w.ResetBuffer()
+	} else if len(w.BufferedEvents) == 0 {
+		w.UpdateLastSave()
 	}
-	log.Printf("(%d worker) Stopped successfully", w.ID)
 	return nil
 }
 
@@ -173,6 +219,16 @@ func (w *Worker) ResetBuffer() {
 // Adds a message to the buffer
 func (w *Worker) AddEventToBuffer(event *dialects.Event) {
 	w.BufferedEvents = append(w.BufferedEvents, event)
+}
+
+// Update last save time
+func (w *Worker) UpdateLastSave() {
+	w.LastSave = time.Now()
+}
+
+// Returns next possible automatic flush time
+func (w *Worker) GetNextAutomaticFlush() time.Time {
+	return w.LastSave.Add(time.Duration(config.AutoFlushInterval) * time.Second)
 }
 
 // Returns the worker's ID

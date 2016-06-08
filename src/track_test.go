@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
 // Input collections for the test cases
@@ -35,10 +34,10 @@ func GetIncompleteCollectionBody(t *TrackBodyCollection) []byte {
 }
 
 // Returns jobs from a collection (used for expected output)
-func GetJobsFromCollection(collection *payload.Collection) []*Job {
-	var jobs []*Job
+func GetJobsFromCollection(collection *payload.Collection) []*EventAction {
+	var jobs []*EventAction
 	for _, payload := range collection.GetPayloads() {
-		jobs = append(jobs, &Job{dialects.NewEvent(collection, payload), 1})
+		jobs = append(jobs, &EventAction{dialects.NewEvent(collection, payload), 1})
 	}
 	return jobs
 }
@@ -56,7 +55,7 @@ func GetTestCollectionPairs(userId uint32, numberOfPayloads int) (*payload.Colle
 }
 
 // Returns a valid protobuf collection in bytes and the related jobs
-func GetTestProtobufCollectionBody(userId uint32, numberOfPayloads int) (*TrackBodyCollection, []*Job) {
+func GetTestProtobufCollectionBody(userId uint32, numberOfPayloads int) (*TrackBodyCollection, []*EventAction) {
 	collection, wrongCollection, incompleteCollection := GetTestCollectionPairs(userId, numberOfPayloads)
 	collectionBytestream, _ := proto.Marshal(collection)
 	disturbedCollectionBytestream, _ := proto.Marshal(wrongCollection)
@@ -65,7 +64,7 @@ func GetTestProtobufCollectionBody(userId uint32, numberOfPayloads int) (*TrackB
 }
 
 // Returns a valid json collection in bytes and the related jobs
-func GetTestJSONCollectionBody(userId uint32, numberOfPayloads int) (*TrackBodyCollection, []*Job) {
+func GetTestJSONCollectionBody(userId uint32, numberOfPayloads int) (*TrackBodyCollection, []*EventAction) {
 	collection, wrongCollection, incompleteCollection := GetTestCollectionPairs(userId, numberOfPayloads)
 	var collectionBytestream bytes.Buffer
 	var disturbedCollectionBytestream bytes.Buffer
@@ -84,12 +83,12 @@ func GetTestJSONCollectionBody(userId uint32, numberOfPayloads int) (*TrackBodyC
 }
 
 // Masks all of the jobs
-func MaskJobs(jobs []*Job) []*Job {
-	var returnJobs []*Job
+func MaskJobs(jobs []*EventAction) []*EventAction {
+	var returnJobs []*EventAction
 	for _, j := range jobs {
-		event := *j.Event
+		event := *j.GetEvent()
 		event.TruncateIPv4LastOctet()
-		returnJobs = append(returnJobs, &Job{&event, j.Attempt})
+		returnJobs = append(returnJobs, &EventAction{&event, j.Attempt})
 	}
 	return returnJobs
 }
@@ -99,7 +98,7 @@ type TrackHandlerInput struct {
 	BodyCollection *TrackBodyCollection
 	Time           string
 	ContentType    string
-	Jobs           []*Job
+	Jobs           []*EventAction
 	MaxTestCase    int
 }
 
@@ -189,16 +188,18 @@ func RunBatchTestOnTrackHandler(t *testing.T, cases []*TrackHandlerTestCase, inp
 
 						// Checks the results and sets the expectations
 						if b.Jobs != nil && c.CheckResults {
+							waitingForSendFinish = true
 							for _, job := range jobs {
-								SetJobExpectation([]*Job{job}, false, false)
+								sendWg.Add(1)
+								SetEventExpectation([]*EventAction{job}, false, false)
 							}
 						}
-
 						TrackHandler(resp, req) // Calls the API
 
 						// If we're expecting some output, we'll wait for the results
 						if b.Jobs != nil && c.CheckResults {
-							time.Sleep(150 * time.Millisecond)
+							sendWg.Wait()
+							waitingForSendFinish = false
 							ValidateSending()
 						}
 
@@ -220,8 +221,9 @@ func RunBatchTestOnTrackHandler(t *testing.T, cases []*TrackHandlerTestCase, inp
 // Tests the API
 func TestTrackHandlerRequiredSignature(t *testing.T) {
 	t.Log("Creating new workers")
+	config = &Config{}                                              // Create an empty config
 	storageClient = &SimpleStorageClient{}                          // Define the Simple Storage as a storage
-	jobQueue = make(chan *Job, 10)                                  // Creates a jobQueue
+	jobQueue = make(chan Job, 10)                                   // Creates a jobQueue
 	log.SetOutput(ioutil.Discard)                                   // Disable the logger
 	T, response, catched = t, nil, false                            // Set properties for the SimpleStorageClient
 	dispatcher := NewDispatcher(2, &WorkerOptions{RetryAttempt: 5}) // Creates a dispatcher

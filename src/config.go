@@ -18,20 +18,22 @@ import (
 
 // Application configuration
 type Config struct {
-	LogFile          string     `json:"logfile"`
-	Dialect          string     `json:"dialect"`
-	MaxWorkerSize    int        `json:"max_worker_size"`
-	MaxQueueSize     int        `json:"max_queue_size"`
-	RetryAttempt     int        `json:"retry_attempt"`
-	BufferSize       int        `json:"buffer_size"`
-	MaskedIP         bool       `json:"masked_ip"`
-	SpreadBufferSize bool       `json:"spread_buffer_size"`
-	Signature        string     `json:"signature"`
-	SharedSecret     string     `json:"shared_secret"`
-	AQS              aqs.Config `json:"aqs"`
-	SNS              sns.Config `json:"sns"`
-	ABS              abs.Config `json:"abs"`
-	S3               s3.Config  `json:"s3"`
+	LogFile           string     `json:"logfile"`
+	Dialect           string     `json:"dialect"`
+	MaxWorkerSize     int        `json:"max_worker_size"`
+	MaxQueueSize      int        `json:"max_queue_size"`
+	RetryAttempt      int        `json:"retry_attempt"`
+	BufferSize        int        `json:"buffer_size"`
+	MaskedIP          bool       `json:"masked_ip"`
+	SpreadBufferSize  bool       `json:"spread_buffer_size"`
+	Signature         string     `json:"signature"`
+	SharedSecret      string     `json:"shared_secret"`
+	MaintenanceKey    string     `json:"maintenance_key"`
+	AutoFlushInterval int        `json:"auto_flush_interval"`
+	AQS               aqs.Config `json:"aqs"`
+	SNS               sns.Config `json:"sns"`
+	ABS               abs.Config `json:"abs"`
+	S3                s3.Config  `json:"s3"`
 }
 
 // Creates a new configuration object
@@ -44,6 +46,7 @@ func NewConfig(filename string) *Config {
 	if err := json.Unmarshal(file, &config); err != nil {
 		log.Fatal(err)
 	}
+	config.UpdateAutoFlushIntervalToSeconds()
 	return &config
 }
 
@@ -119,6 +122,11 @@ func (c *Config) GetBufferSize() int {
 		return c.BufferSize
 	}
 	return (c.GetMaxWorkerSize() * c.GetMaxQueueSize()) * 10
+}
+
+// Update automatic flush interval to seconds
+func (c *Config) UpdateAutoFlushIntervalToSeconds() {
+	c.AutoFlushInterval = c.AutoFlushInterval * 60
 }
 
 // Returns the default spreding property

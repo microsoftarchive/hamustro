@@ -1,14 +1,67 @@
 package main
 
 import (
+	"reflect"
 	"testing"
 )
+
+// Testing the GetAction function's behaviour
+func TestFunctionGetAction(t *testing.T) {
+	t.Log("Testing event action")
+	eventAction := &EventAction{GetTestEvent(3423897841), 1}
+	if exp := 1; eventAction.GetAction() != exp {
+		t.Errorf("Expected action is %s but it was %s instead", exp, eventAction.GetAction())
+	}
+	t.Log("Testing flush action")
+	flushAction := &FlushAction{1}
+	if exp := 2; flushAction.GetAction() != exp {
+		t.Errorf("Expected masked IP setting is %s but it was %s instead", exp, flushAction.GetAction())
+	}
+}
+
+// Testing the IsTargeted function's behaviour
+func TestFunctionIsTargeted(t *testing.T) {
+	t.Log("Testing event action")
+	eventAction := &EventAction{GetTestEvent(3423897841), 1}
+	if exp := false; eventAction.IsTargeted() != exp {
+		t.Errorf("Expected targeted is %s but it was %s instead", exp, eventAction.IsTargeted())
+	}
+	t.Log("Testing flush action")
+	flushAction := &FlushAction{3}
+	if exp := true; flushAction.IsTargeted() != exp {
+		t.Errorf("Expected targeted is %s but it was %s instead", exp, flushAction.IsTargeted())
+	}
+}
+
+// Testing the GetTargetWorkerID function's behaviour
+func TestFunctionGetTargetWorkerID(t *testing.T) {
+	t.Log("Testing event action")
+	eventAction := &EventAction{GetTestEvent(3423897841), 1}
+	if exp := -1; eventAction.GetTargetWorkerID() != exp {
+		t.Errorf("Expected target worker id is %s but it was %s instead", exp, eventAction.GetTargetWorkerID())
+	}
+	t.Log("Testing flush action")
+	flushAction := &FlushAction{5}
+	if exp := 5; flushAction.GetTargetWorkerID() != exp {
+		t.Errorf("Expected target worker id is %s but it was %s instead", exp, flushAction.GetTargetWorkerID())
+	}
+}
+
+// Testing the GetEvent function's behaviour
+func TestFunctionGetEvent(t *testing.T) {
+	t.Log("Testing event action's get event function")
+	event := GetTestEvent(3423897841)
+	eventAction := &EventAction{event, 1}
+	if !reflect.DeepEqual(GetTestEvent(3423897841), eventAction.GetEvent()) {
+		t.Error("Not expected event was returned")
+	}
+}
 
 // Testing the MarkAsFailed function's behaviour
 func TestFunctionMarkAsFailed(t *testing.T) {
 	t.Log("Testing mark as failed behaviour for jobs")
-	jobQueue = make(chan *Job, 10)
-	job := &Job{GetTestEvent(3423897841), 1}
+	jobQueue = make(chan Job, 10)
+	job := &EventAction{GetTestEvent(3423897841), 1}
 
 	cases := []struct {
 		ExpectedAttempt        int
