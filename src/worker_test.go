@@ -184,7 +184,7 @@ func GetTestEvent(userId uint32) *dialects.Event {
 		Event:          "Client.CreateUser",
 		System:         "OSX",
 		ProductGitHash: "5416a5889392d509e3bafcf40f6388e83aab23e6",
-		UserID:         userId,
+		UserID:         fmt.Sprintf("%v", userId),
 		IP:             "214.160.227.22",
 		Parameters:     "",
 		IsTesting:      false}

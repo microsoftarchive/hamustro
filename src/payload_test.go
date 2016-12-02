@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/wunderlist/hamustro/src/payload"
 )
@@ -13,7 +14,7 @@ func GetTestPayloadCollection(userId uint32, numberOfPayloads int) *payload.Coll
 			At:         proto.Uint64(1454681104),
 			Event:      proto.String("Client.CreateUser"),
 			Nr:         proto.Uint32(1),
-			UserId:     proto.Uint32(userId + uint32(i*100)),
+			UserId:     proto.String(fmt.Sprintf(userId + uint32(i*100))),
 			Ip:         proto.String("214.160.227.22"),
 			Parameters: proto.String(""),
 			IsTesting:  proto.Bool(false)})

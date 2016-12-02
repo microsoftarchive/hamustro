@@ -1,6 +1,7 @@
 package dialects
 
 import (
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/wunderlist/hamustro/src/payload"
 	"reflect"
@@ -20,7 +21,7 @@ func GetTestEvent(userId uint32) *Event {
 		Event:          "Client.CreateUser",
 		System:         "OSX",
 		ProductGitHash: "5416a5889392d509e3bafcf40f6388e83aab23e6",
-		UserID:         userId,
+		UserID:         fmt.Sprintf("%v", userId),
 		IP:             "214.160.227.22",
 		Parameters:     "",
 		IsTesting:      false}
@@ -77,7 +78,7 @@ func TestNewEventCreation(t *testing.T) {
 		At:         proto.Uint64(1454681104),
 		Event:      proto.String("Client.CreateUser"),
 		Nr:         proto.Uint32(1),
-		UserId:     proto.Uint32(97421193),
+		UserId:     proto.String("97421193"),
 		Ip:         proto.String("214.160.227.22"),
 		Parameters: proto.String(""),
 		IsTesting:  proto.Bool(false)}
@@ -122,7 +123,7 @@ func TestNewEventCreation(t *testing.T) {
 	if exp := "5416a5889392d509e3bafcf40f6388e83aab23e6"; e.ProductGitHash != exp {
 		t.Errorf("Expected ProductGitHash was %s but it was %s instead", exp, e.ProductGitHash)
 	}
-	if exp := uint32(97421193); e.UserID != exp {
+	if exp := "97421193"; e.UserID != exp {
 		t.Errorf("Expected UserID was %s but it was %d instead", exp, e.UserID)
 	}
 	if exp := "214.160.227.22"; e.IP != exp {
