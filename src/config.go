@@ -6,6 +6,7 @@ import (
 	"github.com/wunderlist/hamustro/src/dialects"
 	"github.com/wunderlist/hamustro/src/dialects/abs"
 	"github.com/wunderlist/hamustro/src/dialects/aqs"
+	"github.com/wunderlist/hamustro/src/dialects/file"
 	"github.com/wunderlist/hamustro/src/dialects/s3"
 	"github.com/wunderlist/hamustro/src/dialects/sns"
 	"io/ioutil"
@@ -18,22 +19,23 @@ import (
 
 // Application configuration
 type Config struct {
-	LogFile           string     `json:"logfile"`
-	Dialect           string     `json:"dialect"`
-	MaxWorkerSize     int        `json:"max_worker_size"`
-	MaxQueueSize      int        `json:"max_queue_size"`
-	RetryAttempt      int        `json:"retry_attempt"`
-	BufferSize        int        `json:"buffer_size"`
-	MaskedIP          bool       `json:"masked_ip"`
-	SpreadBufferSize  bool       `json:"spread_buffer_size"`
-	Signature         string     `json:"signature"`
-	SharedSecret      string     `json:"shared_secret"`
-	MaintenanceKey    string     `json:"maintenance_key"`
-	AutoFlushInterval int        `json:"auto_flush_interval"`
-	AQS               aqs.Config `json:"aqs"`
-	SNS               sns.Config `json:"sns"`
-	ABS               abs.Config `json:"abs"`
-	S3                s3.Config  `json:"s3"`
+	LogFile           string      `json:"logfile"`
+	Dialect           string      `json:"dialect"`
+	MaxWorkerSize     int         `json:"max_worker_size"`
+	MaxQueueSize      int         `json:"max_queue_size"`
+	RetryAttempt      int         `json:"retry_attempt"`
+	BufferSize        int         `json:"buffer_size"`
+	MaskedIP          bool        `json:"masked_ip"`
+	SpreadBufferSize  bool        `json:"spread_buffer_size"`
+	Signature         string      `json:"signature"`
+	SharedSecret      string      `json:"shared_secret"`
+	MaintenanceKey    string      `json:"maintenance_key"`
+	AutoFlushInterval int         `json:"auto_flush_interval"`
+	AQS               aqs.Config  `json:"aqs"`
+	SNS               sns.Config  `json:"sns"`
+	ABS               abs.Config  `json:"abs"`
+	S3                s3.Config   `json:"s3"`
+	File              file.Config `json:"file"`
 }
 
 // Creates a new configuration object
@@ -158,6 +160,8 @@ func (c *Config) DialectConfig() (dialects.Dialect, error) {
 		return &c.ABS, nil
 	case "s3":
 		return &c.S3, nil
+	case "file":
+		return &c.File, nil
 	}
 	return nil, fmt.Errorf("Not supported `%s` dialect in the configuration file.", c.Dialect)
 }
