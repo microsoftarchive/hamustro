@@ -187,7 +187,7 @@ func GetTestEvent(userId uint32) *dialects.Event {
 		UserID:         fmt.Sprintf("%v", userId),
 		IP:             "214.160.227.22",
 		Parameters:     "",
-		IsTesting:      false}
+		Env:            "PRODUCTION"}
 }
 
 // Sets the actions expectation

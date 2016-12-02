@@ -24,7 +24,7 @@ func GetTestEvent(userId uint32) *Event {
 		UserID:         fmt.Sprintf("%v", userId),
 		IP:             "214.160.227.22",
 		Parameters:     "",
-		IsTesting:      false}
+		Env:            "PRODUCTION"}
 }
 
 // Converts and Event into a list of string
@@ -45,7 +45,7 @@ func TestEventStringConversion(t *testing.T) {
 		"97421193",
 		"214.160.227.22",
 		"",
-		"false"}
+		"PRODUCTION"}
 	if !reflect.DeepEqual(e.String(), exp) {
 		t.Error("Expected event's string is not matched")
 	}
@@ -132,7 +132,7 @@ func TestNewEventCreation(t *testing.T) {
 	if exp := ""; e.Parameters != exp {
 		t.Errorf("Expected Parameters was %s but it was %s instead", exp, e.Parameters)
 	}
-	if exp := false; e.IsTesting != exp {
-		t.Errorf("Expected IsTesting was %s but it was %s instead", exp, e.IsTesting)
+	if exp := "PRODUCTION"; e.Env != exp {
+		t.Errorf("Expected Env was %s but it was %s instead", exp, e.Env)
 	}
 }

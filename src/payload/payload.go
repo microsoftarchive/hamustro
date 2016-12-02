@@ -17,7 +17,7 @@ func (m *Collection) IsValid() bool {
 	if m == nil {
 		return false
 	}
-	if m.DeviceId == nil || m.ClientId == nil || m.Session == nil || m.SystemVersion == nil || m.ProductVersion == nil {
+	if m.DeviceId == nil || m.ClientId == nil || m.Session == nil || m.SystemVersion == nil || m.ProductVersion == nil || m.Env == nil {
 		return false
 	}
 	for _, p := range m.GetPayloads() {
