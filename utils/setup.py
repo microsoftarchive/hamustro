@@ -10,13 +10,9 @@ class Setup(object):
     OPT_BOOL = {"Y": True, "n": False}
     OPT_SIGNATURE = {"Y": "optional", "n": "required"}
     OPT_FILE_FORMAT = ["csv", "json"]
-    OPT_DIALECTS = {
-        "abs": "Azure Blob Storage",
-        "aqs": "Azure Queue Storage",
-        "s3": "Amazon Simple Storage Service (S3)",
-        "sns": "Amazon SNS",
-        "file": "Local file",
-    }
+    OPT_DIALECTS = {"abs": "Azure Blob Storage", "aqs": "Azure Queue Storage",
+        "s3": "Amazon Simple Storage Service (S3)", "sns": "Amazon SNS",
+        "file": "Local file"}
 
     # void
     def __init__(self):
@@ -37,13 +33,9 @@ class Setup(object):
 
         while True:
             value = raw_input(text) or default
-            if not value and required:
-                continue
-            if not choices:
-                return value
-            if value in choices:
-                return value
-
+            if not value and required: continue
+            if not choices: return value
+            if value in choices: return value
             print("Supported options: {}".format(", ".join(choices)))
 
     # void
@@ -113,8 +105,7 @@ class Setup(object):
             'bucket': self.q("Bucket", required=True),
             'blob_path': self.q("Blob path", required=True, default="{date}/"),
             'file_format': self.q("File output format", choices=self.OPT_FILE_FORMAT, default="json"),
-            'endpoint': self.q("Endpoint", required=True),
-        }
+            'endpoint': self.q("Endpoint", required=True)}
 
     # voifd
     def abs(self):
@@ -123,8 +114,7 @@ class Setup(object):
             'access_key': self.q("Access Key", required=True),
             'container': self.q("Container", required=True),
             'blob_path': self.q("Blob path", required=True, default="{date}/"),
-            'file_format': self.q("File output format", choices=self.OPT_FILE_FORMAT, default="csv"),
-        }
+            'file_format': self.q("File output format", choices=self.OPT_FILE_FORMAT, default="csv")}
 
     # void
     def sns(self):
@@ -132,24 +122,21 @@ class Setup(object):
             'access_key_id': self.q("Access Key ID", required=True),
             'secret_access_key': self.q("Secret Access Key", required=True),
             'region': self.q("Region", required=True),
-            'topic_arn': self.q("Topic ARN", required=True),
-        }
+            'topic_arn': self.q("Topic ARN", required=True)}
 
     # void
     def aqs(self):
         return {
             'account': self.q("Account", required=True),
             'access_key': self.q("Access Key", required=True),
-            'queue_name': self.q("Queue Name", required=True),
-        }
+            'queue_name': self.q("Queue Name", required=True)}
 
     # void
     def file(self):
         return {
             'file_path': self.q("File path", required=True, default="{date}/"),
             'file_format': self.q("File output format", choices=self.OPT_FILE_FORMAT, default="csv"),
-            'compress': self.q("Do you want to compress the output files?", default="n", choices=self.OPT_BOOL.keys())
-        }
+            'compress': self.q("Do you want to compress the output files?", default="n", choices=self.OPT_BOOL.keys())}
 
     # void
     def _options(self):
