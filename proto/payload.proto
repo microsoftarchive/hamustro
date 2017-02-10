@@ -5,10 +5,17 @@ syntax = "proto2";
 
 enum Environment {
   PRODUCTION = 0;
-  STAGING = 1;
-  QUALITY_ASSURANCE = 2;
-  TESTING = 3;
-  DEVELOPMENT = 4;
+  GENERAL_AVAILABILITY = 1;
+  RELEASE_TO_MARKETING = 2;
+  RELEASE_CANDIDATE = 3;
+  BETA = 4;
+  ALPHA = 5;
+  WEEKLY = 6;
+  NIGHTLY = 7;
+  STAGING = 8;
+  QUALITY_ASSURANCE = 9;
+  TESTING = 10;
+  DEVELOPMENT = 11;
 }
 
 message Payload {
