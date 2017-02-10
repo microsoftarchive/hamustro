@@ -11,20 +11,29 @@ import (
 // Returns an Event for testing purposes
 func GetTestEvent(userId uint32) *Event {
 	return &Event{
-		DeviceID:       "a73b1c37-2c24-4786-af7a-16de88fbe23a",
-		ClientID:       "bce44f67b2661fd445d469b525b04f68",
-		Session:        "244f056dee6d475ec673ea0d20b69bab",
-		Nr:             1,
-		SystemVersion:  "10.10",
-		ProductVersion: "1.1.2",
-		At:             "2016-02-05T15:05:04",
-		Event:          "Client.CreateUser",
-		System:         "OSX",
-		ProductGitHash: "5416a5889392d509e3bafcf40f6388e83aab23e6",
-		UserID:         fmt.Sprintf("%v", userId),
-		IP:             "214.160.227.22",
-		Parameters:     "",
-		Env:            "PRODUCTION"}
+		DeviceID:        "a73b1c37-2c24-4786-af7a-16de88fbe23a",
+		ClientID:        "bce44f67b2661fd445d469b525b04f68",
+		Session:         "244f056dee6d475ec673ea0d20b69bab",
+		Nr:              1,
+		Env:             "PRODUCTION",
+		SystemVersion:   "10.10",
+		ProductVersion:  "1.1.2",
+		At:              "2016-02-05T15:05:04",
+		Timezone:        "+02:00",
+		Event:           "Client.CreateUser",
+		DeviceMake:      "Iphone",
+		DeviceModel:     "Iphone 6",
+		System:          "OSX",
+		SystemLanguage:  "DE",
+		Browser:         "Mozilla",
+		BrowserVersion:  "10.01.11",
+		ProductGitHash:  "5416a5889392d509e3bafcf40f6388e83aab23e6",
+		ProductLanguage: "HU",
+		UserID:          fmt.Sprintf("%v", userId),
+		TenantID:        "sdfghjkloiuytremiwoz",
+		IP:              "214.160.227.22",
+		Country:         "UK",
+		Parameters:      "{parameter: test_parameter}"}
 }
 
 // Converts and Event into a list of string
@@ -36,17 +45,28 @@ func TestEventStringConversion(t *testing.T) {
 		"bce44f67b2661fd445d469b525b04f68",
 		"244f056dee6d475ec673ea0d20b69bab",
 		"1",
+		"PRODUCTION",
 		"10.10",
 		"1.1.2",
 		"2016-02-05T15:05:04",
+		"+02:00",
 		"Client.CreateUser",
+		"Iphone",
+		"Iphone 6",
 		"OSX",
+		"DE",
+		"Mozilla",
+		"10.01.11",
 		"5416a5889392d509e3bafcf40f6388e83aab23e6",
+		"HU",
 		"97421193",
+		"sdfghjkloiuytremiwoz",
 		"214.160.227.22",
-		"",
-		"PRODUCTION"}
+		"UK",
+		"{parameter: test_parameter}"}
 	if !reflect.DeepEqual(e.String(), exp) {
+		t.Error(e.String())
+		t.Error(exp)
 		t.Error("Expected event's string is not matched")
 	}
 }
@@ -74,14 +94,14 @@ func TestFunctionTruncateIPv4LastOctet(t *testing.T) {
 // Tests the Events creation from a Collection.
 func TestNewEventCreation(t *testing.T) {
 	t.Log("Creating a new Event object from Payload and Collection")
+	env := payload.Environment_PRODUCTION
 	p := payload.Payload{
 		At:         proto.Uint64(1454681104),
 		Event:      proto.String("Client.CreateUser"),
 		Nr:         proto.Uint32(1),
 		UserId:     proto.String("97421193"),
 		Ip:         proto.String("214.160.227.22"),
-		Parameters: proto.String(""),
-		IsTesting:  proto.Bool(false)}
+		Parameters: proto.String("")}
 	c := payload.Collection{
 		DeviceId:       proto.String("a73b1c37-2c24-4786-af7a-16de88fbe23a"),
 		ClientId:       proto.String("bce44f67b2661fd445d469b525b04f68"),
@@ -90,6 +110,7 @@ func TestNewEventCreation(t *testing.T) {
 		ProductVersion: proto.String("1.1.2"),
 		System:         proto.String("OSX"),
 		ProductGitHash: proto.String("5416a5889392d509e3bafcf40f6388e83aab23e6"),
+		Env:            &env,
 		Payloads:       []*payload.Payload{&p}}
 	e := NewEvent(&c, &p)
 
