@@ -60,7 +60,7 @@ t.TrackEvent(
   event string, // required
   tenant_id string,
   user_id string,
-  params dict,
+  params map[string]string,
 )
 ```
 
