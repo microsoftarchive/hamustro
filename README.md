@@ -28,7 +28,7 @@ No official client is available at the moment. If you want to write your own ple
 
 ## Installation
 
-Please install [Go 1.5+](https://golang.org/dl/) and [Python 2.7 or 3.3+](https://www.python.org/downloads/).
+Please install [Go 1.6+](https://golang.org/dl/) and [Python 2.7 or 3.3+](https://www.python.org/downloads/).
 
 ```bash
 $ sudo make install/go && source ~/.profile # you can install golang with this on OSX/Ubuntu if you need it
