@@ -1,10 +1,20 @@
 package dialects
 
 import (
+	"encoding/json"
 	"github.com/wunderlist/hamustro/src/payload"
 	"regexp"
 	"strconv"
 )
+
+func ConvertToJson(paramters []*payload.Parameter) string {
+	out := map[string]string{}
+	for _, p := range paramters {
+		out[*p.Name] = *p.Value
+	}
+	b, _ := json.Marshal(out)
+	return string(b[:])
+}
 
 // Single event
 type Event struct {
@@ -58,7 +68,7 @@ func NewEvent(meta *payload.Collection, payload *payload.Payload) *Event {
 		TenantID:        payload.GetTenantId(),
 		IP:              payload.GetIp(),
 		Country:         payload.GetCountry(),
-		Parameters:      payload.GetParameters()}
+		Parameters:      ConvertToJson(payload.GetParameters())}
 }
 
 // Truncates the IP address

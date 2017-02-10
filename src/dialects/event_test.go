@@ -33,7 +33,7 @@ func GetTestEvent(userId uint32) *Event {
 		TenantID:        "sdfghjkloiuytremiwoz",
 		IP:              "214.160.227.22",
 		Country:         "UK",
-		Parameters:      "{parameter: test_parameter}"}
+		Parameters:      "{\"parameter\": \"test_parameter\"}"}
 }
 
 // Converts and Event into a list of string
@@ -63,7 +63,7 @@ func TestEventStringConversion(t *testing.T) {
 		"sdfghjkloiuytremiwoz",
 		"214.160.227.22",
 		"UK",
-		"{parameter: test_parameter}"}
+		"{\"parameter\": \"test_parameter\"}"}
 	if !reflect.DeepEqual(e.String(), exp) {
 		t.Error("Expected event's string is not matched")
 	}
@@ -93,6 +93,9 @@ func TestFunctionTruncateIPv4LastOctet(t *testing.T) {
 func TestNewEventCreation(t *testing.T) {
 	t.Log("Creating a new Event object from Payload and Collection")
 	env := payload.Environment_PRODUCTION
+	parameter := payload.Parameter{
+		Name:  proto.String("parameter"),
+		Value: proto.String("test_parameter")}
 	p := payload.Payload{
 		At:         proto.Uint64(1454681104),
 		Timezone:   proto.String("+02:00"),
@@ -102,7 +105,7 @@ func TestNewEventCreation(t *testing.T) {
 		TenantId:   proto.String("sdfghjkloiuytremiwoz"),
 		Ip:         proto.String("214.160.227.22"),
 		Country:    proto.String("UK"),
-		Parameters: proto.String("{parameter: test_parameter}")}
+		Parameters: []*payload.Parameter{&parameter}}
 	c := payload.Collection{
 		DeviceId:        proto.String("a73b1c37-2c24-4786-af7a-16de88fbe23a"),
 		ClientId:        proto.String("bce44f67b2661fd445d469b525b04f68"),
@@ -145,7 +148,7 @@ func TestNewEventCreation(t *testing.T) {
 	if exp := "UK"; e.Country != exp {
 		t.Errorf("Expected Country was %s but it was %s instead", exp, e.Country)
 	}
-	if exp := "{parameter: test_parameter}"; e.Parameters != exp {
+	if exp := "{\"parameter\":\"test_parameter\"}"; e.Parameters != exp {
 		t.Errorf("Expected Parameters was %s but it was %s instead", exp, e.Parameters)
 	}
 	if exp := "a73b1c37-2c24-4786-af7a-16de88fbe23a"; e.DeviceID != exp {

@@ -71,14 +71,24 @@ For sending messages we're using [Protobuf](https://developers.google.com/protoc
 This is the message [format](../proto/payload.proto) we're using:
 
 ```protobuf
+enum Environment {
+  PRODUCTION = 0;
+  STAGING = 1;
+  QUALITY_ASSURANCE = 2;
+  TESTING = 3;
+  DEVELOPMENT = 4;
+}
+
 message Payload {
   required uint64 at = 1;
   required string event = 2;
   required uint32 nr = 3;
-  optional uint32 user_id = 4;
-  optional string ip = 5;
-  optional string parameters = 6;
-  optional bool is_testing = 7;
+  optional string timezone = 4;
+  optional string tenant_id = 5;
+  optional string user_id = 6;
+  optional string ip = 7;
+  optional string country = 8;
+  repeated Parameter parameters = 9;
 }
 
 message Collection {
@@ -87,9 +97,21 @@ message Collection {
   required string session = 3;
   required string system_version = 4;
   required string product_version = 5;
-  optional string system = 6;
-  optional string product_git_hash = 7;
-  repeated Payload payloads = 8;
+  required Environment env = 6;
+  optional string device_make = 7;
+  optional string device_model = 8;
+  optional string system = 9;
+  optional string system_language = 10;
+  optional string browser = 11;
+  optional string browser_version = 12;
+  optional string product_git_hash = 13;
+  optional string product_language = 14;
+  repeated Payload payloads = 15;
+}
+
+message Parameter {
+  required string name = 1;
+  required string value = 2;
 }
 ```
 
