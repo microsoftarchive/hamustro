@@ -14,8 +14,15 @@ t = ClientTracker(
   client_id string, // required
   system_version string, // required
   product_version string, // required
+  env, // required
+  device_make string,
+  device_model string,
   system string,
+  system_language string,
+  browser string,
+  browser_version string,
   product_git_hash string,
+  product_language string,
   queue_size int, // set from config, default: 20
   queue_retention int // set from config, default: 1440 (minutes = 24 hours)
 )
@@ -32,7 +39,7 @@ t.SetHeaders(
 It will generate pre-populated information for new events so it should not be calculated on adding each event.
 
 ```cpp
-// Generated as md5hex(sha256hex(device_id) + ":" + client_id + ":" + system_version + ":" + product_version)
+// Generated as md5hex(sha256hex(device_id) + ":" + client_id + ":" + system_version + ":" + product_version + ":" + env)
 t.GenerateSession()
 ```
 
@@ -42,6 +49,12 @@ Loading information from persistent storage.
 tc.LoadCollections() // not sent events
 tc.LoadNumberPerSession() // events per session
 tc.LoadLastSyncTime() // timestamp for events sent last time
+tc.LoadUser() // tenant_id and user_id
+```
+
+Write functions to store the following information also after login:
+```cpp
+tc.SetUser(tenant_id, user_id)
 ```
 
 ## Track events
@@ -51,16 +64,17 @@ To track events you should call the following:
 ```cpp
 t.TrackEvent(
   event string, // required
-  user_id int,
-  params string,
-  is_testing bool // default: false
+  params map[string]string
 )
 ```
 
 Please set automatically 
-- the `at` uint64 attribute for the events - it must contain an EPOCH UTC timestamp (seconds, ~10 digits), 
+- the `at` uint64 attribute for the events - it must contain an EPOCH UTC timestamp (seconds, ~10 digits),
+- `user_id` and `tenant_id` from the persistent storage
+- the `timezone` string attribute for actual timzone,
 - the `nr` integer attribute - it must contain the serial number of this event within the session all time. So, it starts counting from the first event in the session and it never defaults for that session, not even new application open,
 - the `ip` string attribute for actual IPv4 address.
+- the `country` string attribute for actual country.
 
 It'll queue up the events within the `ClientTracker`. You should store this in a persistent storage. Please make sure to save the `ClientTracker`'s attributes with the event because you will need to send to the `collector_url` by session.
 
@@ -68,30 +82,7 @@ It'll queue up the events within the `ClientTracker`. You should store this in a
 
 For sending messages we're using [Protobuf](https://developers.google.com/protocol-buffers/?hl=en) or [JSON](http://www.json.org). This is quicker to handle and smaller than JSON.
 
-This is the message [format](../proto/payload.proto) we're using:
-
-```protobuf
-message Payload {
-  required uint64 at = 1;
-  required string event = 2;
-  required uint32 nr = 3;
-  optional uint32 user_id = 4;
-  optional string ip = 5;
-  optional string parameters = 6;
-  optional bool is_testing = 7;
-}
-
-message Collection {
-  required string device_id = 1;
-  required string client_id = 2;
-  required string session = 3;
-  required string system_version = 4;
-  required string product_version = 5;
-  optional string system = 6;
-  optional string product_git_hash = 7;
-  repeated Payload payloads = 8;
-}
-```
+This is the message [format](../proto/payload.proto) we're using.
 
 You can send multiple `Payloads`, but as you can see you have to send these by session. Normally you won't have multiple sessions in your code but it can happen with bad connection and updates happening. Please sign them as 'Sent', but don't delete them before getting a response of '200'.
 

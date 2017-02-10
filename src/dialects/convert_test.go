@@ -99,6 +99,7 @@ func TestFunctionConvertCSV(t *testing.T) {
 	t.Log("Converting a single event to CSV to check")
 	event := GetTestEvent(97421193)
 	b, err := ConvertCSV(event)
+	event.Parameters = "\"{\"\"parameter\"\": \"\"test_parameter\"\"}\""
 	if err != nil {
 		t.Errorf("CSV conversion failed %s", err.Error())
 	}

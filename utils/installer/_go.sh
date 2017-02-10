@@ -8,8 +8,8 @@ if [[ `uname -s` == "Darwin" ]]; then
 else
   # Linux (Ubuntu & AWS) installation
   cd /tmp/
-    curl -O https://storage.googleapis.com/golang/go1.5.3.linux-amd64.tar.gz
-    tar -xvf go1.5.3.linux-amd64.tar.gz
+    curl -O https://storage.googleapis.com/golang/go1.6.4.linux-amd64.tar.gz
+    tar -xvf go1.6.4.linux-amd64.tar.gz
     mv go /usr/local && mkdir -p /usr/local/gopath
   cd -
 fi
