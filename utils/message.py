@@ -19,13 +19,15 @@ class Message(object):
         p.at = int(time.time())
         p.event = 'Event.{}'.format(random.randint(10000,99999))
         p.nr = random.randint(1,1000)
-        p.user_id = 'Event.{}'.format(random.randint(1,99000000))
-        p.ip = '{}.{}.{}.{}'.format(random.randint(1,255), random.randint(1,255), random.randint(1,255), random.randint(1,255))
+        p.user_id = 'User.{}'.format(random.randint(1,99000000))
+        if random.randint(1,2) == 1:
+            p.ip = '{}.{}.{}.{}'.format(random.randint(1,255), random.randint(1,255),
+                                        random.randint(1,255), random.randint(1,255))
         return p
 
     def set_collection(self):
         c = Collection()
-        c.env = 4
+        c.env = random.randint(0,11)
         c.device_id = hashlib.sha256(str(uuid.uuid4())).hexdigest()
         c.client_id = hashlib.md5(str(random.randint(1,1000000))).hexdigest()[:20]
         c.system_version = '{}.{}'.format(random.randint(1,5), random.randint(1,50))

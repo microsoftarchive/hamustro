@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/bfaludi/remoteip"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/wunderlist/hamustro/src/dialects"
@@ -101,6 +102,11 @@ func TrackHandler(w http.ResponseWriter, r *http.Request) {
 	// Creates a Job and put into the JobQueue for processing.
 	for _, payload := range collection.GetPayloads() {
 		event := dialects.NewEvent(collection, payload)
+		if event.IP == "" {
+			if IP := remoteip.GetIPv4Address(r); IP != "" {
+				event.SetIPAddress(IP)
+			}
+		}
 		if config.IsMaskedIP() {
 			event.TruncateIPv4LastOctet()
 		}

@@ -72,7 +72,7 @@ func (c *BlobStorage) Save(msg *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	if err := c.Client.CreateBlockBlobFromReader(c.Container, dialects.GetRandomPath(c.BlobPath, c.FileFormat),
+	if err := c.Client.CreateBlockBlobFromReader(c.Container, dialects.GetRandomPath(c.BlobPath, c.FileFormat, true),
 		uint64(buffer.Len()), bytes.NewReader(buffer.Bytes()), nil); err != nil {
 		return err
 	}
