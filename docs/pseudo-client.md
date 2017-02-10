@@ -14,8 +14,15 @@ t = ClientTracker(
   client_id string, // required
   system_version string, // required
   product_version string, // required
+  env, // required
+  device_make string,
+  device_model string,
   system string,
+  system_language string,
+  browser string,
+  browser_version string,
   product_git_hash string,
+  product_language string,
   queue_size int, // set from config, default: 20
   queue_retention int // set from config, default: 1440 (minutes = 24 hours)
 )
@@ -51,16 +58,18 @@ To track events you should call the following:
 ```cpp
 t.TrackEvent(
   event string, // required
-  user_id int,
-  params string,
-  is_testing bool // default: false
+  tenant_id string,
+  user_id string,
+  params dict,
 )
 ```
 
 Please set automatically 
-- the `at` uint64 attribute for the events - it must contain an EPOCH UTC timestamp (seconds, ~10 digits), 
+- the `at` uint64 attribute for the events - it must contain an EPOCH UTC timestamp (seconds, ~10 digits),
+- the `timezone` string attribute for actual timzone,
 - the `nr` integer attribute - it must contain the serial number of this event within the session all time. So, it starts counting from the first event in the session and it never defaults for that session, not even new application open,
 - the `ip` string attribute for actual IPv4 address.
+- the `country` string attribute for actual country.
 
 It'll queue up the events within the `ClientTracker`. You should store this in a persistent storage. Please make sure to save the `ClientTracker`'s attributes with the event because you will need to send to the `collector_url` by session.
 
@@ -73,10 +82,17 @@ This is the message [format](../proto/payload.proto) we're using:
 ```protobuf
 enum Environment {
   PRODUCTION = 0;
-  STAGING = 1;
-  QUALITY_ASSURANCE = 2;
-  TESTING = 3;
-  DEVELOPMENT = 4;
+  GENERAL_AVAILABILITY = 1;
+  RELEASE_TO_MARKETING = 2;
+  RELEASE_CANDIDATE = 3;
+  BETA = 4;
+  ALPHA = 5;
+  WEEKLY = 6;
+  NIGHTLY = 7;
+  STAGING = 8;
+  QUALITY_ASSURANCE = 9;
+  TESTING = 10;
+  DEVELOPMENT = 11;
 }
 
 message Payload {
@@ -111,6 +127,7 @@ message Collection {
 
 message Parameter {
   required string name = 1;
+  required string value = 2;
   required string value = 2;
 }
 ```
