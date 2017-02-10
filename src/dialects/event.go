@@ -43,6 +43,11 @@ func NewEvent(meta *payload.Collection, payload *payload.Payload) *Event {
 		IsTesting:      payload.GetIsTesting()}
 }
 
+// Set IP Address
+func (event *Event) SetIPAddress(IP string) {
+	event.IP = IP
+}
+
 // Truncates the IP address
 func (event *Event) TruncateIPv4LastOctet() {
 	event.IP = regexpIP.ReplaceAllString(event.IP, "$1.0")

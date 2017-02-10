@@ -20,8 +20,12 @@ class Message(object):
         p.event = 'Event.{}'.format(random.randint(10000,99999))
         p.nr = random.randint(1,1000)
         p.user_id = random.randint(1,99000000)
-        p.ip = '{}.{}.{}.{}'.format(random.randint(1,255), random.randint(1,255), random.randint(1,255), random.randint(1,255))
-        p.is_testing = True
+        if random.randint(1,2) == 1:
+            p.ip = '{}.{}.{}.{}'.format(random.randint(1,255), random.randint(1,255),
+                                        random.randint(1,255), random.randint(1,255))
+            p.is_testing = False
+        else:
+            p.is_testing = True
         return p
 
     def set_collection(self):
