@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"github.com/wunderlist/hamustro/src/payload"
 	"io"
+	"strconv"
 )
 
 // Returns the request's signature
@@ -34,5 +35,7 @@ func GetSession(c *payload.Collection) string {
 	io.WriteString(session, c.GetSystemVersion())
 	io.WriteString(session, ":")
 	io.WriteString(session, c.GetProductVersion())
+	io.WriteString(session, ":")
+	io.WriteString(session, strconv.Itoa(int(c.GetEnv())))
 	return hex.EncodeToString(session.Sum(nil))
 }

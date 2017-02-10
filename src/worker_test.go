@@ -176,7 +176,7 @@ func GetTestEvent(userId uint32) *dialects.Event {
 	return &dialects.Event{
 		DeviceID:       "a73b1c37-2c24-4786-af7a-16de88fbe23a",
 		ClientID:       "bce44f67b2661fd445d469b525b04f68",
-		Session:        "244f056dee6d475ec673ea0d20b69bab",
+		Session:        "0e350a2cc31648bb24ba61eb14be337c",
 		Nr:             1,
 		SystemVersion:  "10.10",
 		ProductVersion: "1.1.2",

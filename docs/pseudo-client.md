@@ -32,7 +32,7 @@ t.SetHeaders(
 It will generate pre-populated information for new events so it should not be calculated on adding each event.
 
 ```cpp
-// Generated as md5hex(sha256hex(device_id) + ":" + client_id + ":" + system_version + ":" + product_version)
+// Generated as md5hex(sha256hex(device_id) + ":" + client_id + ":" + system_version + ":" + product_version + ":" + env)
 t.GenerateSession()
 ```
 

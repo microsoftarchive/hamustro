@@ -20,7 +20,7 @@ func TestFunctionGetSignature(t *testing.T) {
 func TestFunctionGetSession(t *testing.T) {
 	t.Log("Generating a session for a payload's collection.")
 	collection := GetTestPayloadCollection(97421193, 1)
-	if exp := "244f056dee6d475ec673ea0d20b69bab"; GetSession(collection) != exp {
+	if exp := "0e350a2cc31648bb24ba61eb14be337c"; GetSession(collection) != exp {
 		t.Errorf("Expected session was %s and it was %s instead", exp, GetSession(collection))
 	}
 }

@@ -25,7 +25,7 @@ func GetTestPayloadCollection(userId uint32, numberOfPayloads int) *payload.Coll
 	c := payload.Collection{
 		DeviceId:       proto.String("a73b1c37-2c24-4786-af7a-16de88fbe23a"),
 		ClientId:       proto.String("bce44f67b2661fd445d469b525b04f68"),
-		Session:        proto.String("244f056dee6d475ec673ea0d20b69bab"),
+		Session:        proto.String("0e350a2cc31648bb24ba61eb14be337c"),
 		SystemVersion:  proto.String("10.10"),
 		ProductVersion: proto.String("1.1.2"),
 		System:         proto.String("OSX"),

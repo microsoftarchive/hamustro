@@ -13,7 +13,7 @@ func GetTestEvent(userId uint32) *Event {
 	return &Event{
 		DeviceID:        "a73b1c37-2c24-4786-af7a-16de88fbe23a",
 		ClientID:        "bce44f67b2661fd445d469b525b04f68",
-		Session:         "244f056dee6d475ec673ea0d20b69bab",
+		Session:         "0e350a2cc31648bb24ba61eb14be337c",
 		Nr:              1,
 		Env:             "PRODUCTION",
 		SystemVersion:   "10.10",
@@ -43,7 +43,7 @@ func TestEventStringConversion(t *testing.T) {
 	exp := []string{
 		"a73b1c37-2c24-4786-af7a-16de88fbe23a",
 		"bce44f67b2661fd445d469b525b04f68",
-		"244f056dee6d475ec673ea0d20b69bab",
+		"0e350a2cc31648bb24ba61eb14be337c",
 		"1",
 		"PRODUCTION",
 		"10.10",
@@ -109,7 +109,7 @@ func TestNewEventCreation(t *testing.T) {
 	c := payload.Collection{
 		DeviceId:        proto.String("a73b1c37-2c24-4786-af7a-16de88fbe23a"),
 		ClientId:        proto.String("bce44f67b2661fd445d469b525b04f68"),
-		Session:         proto.String("244f056dee6d475ec673ea0d20b69bab"),
+		Session:         proto.String("0e350a2cc31648bb24ba61eb14be337c"),
 		Env:             &env,
 		SystemVersion:   proto.String("10.10"),
 		ProductVersion:  proto.String("1.1.2"),
@@ -157,7 +157,7 @@ func TestNewEventCreation(t *testing.T) {
 	if exp := "bce44f67b2661fd445d469b525b04f68"; e.ClientID != exp {
 		t.Errorf("Expected ClientID was %s but it was %s instead", exp, e.ClientID)
 	}
-	if exp := "244f056dee6d475ec673ea0d20b69bab"; e.Session != exp {
+	if exp := "0e350a2cc31648bb24ba61eb14be337c"; e.Session != exp {
 		t.Errorf("Expected Session was %s but it was %s instead", exp, e.Session)
 	}
 	if exp := "PRODUCTION"; e.Env != exp {
