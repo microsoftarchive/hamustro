@@ -14,7 +14,8 @@ class Setup(object):
         "abs": "Azure Blob Storage",
         "aqs": "Azure Queue Storage",
         "s3": "Amazon Simple Storage Service (S3)",
-        "sns": "Amazon SNS"
+        "sns": "Amazon SNS",
+        "file": "Local file",
     }
 
     # void
@@ -24,7 +25,7 @@ class Setup(object):
 
     @property
     def buffered(self):
-        return self.dialect in ('s3', 'abs')
+        return self.dialect in ('s3', 'abs', 'file')
 
     # type
     def q(self, text, default="", choices=None, required=False):
@@ -140,6 +141,14 @@ class Setup(object):
             'account': self.q("Account", required=True),
             'access_key': self.q("Access Key", required=True),
             'queue_name': self.q("Queue Name", required=True),
+        }
+
+    # void
+    def file(self):
+        return {
+            'file_path': self.q("File path", required=True, default="{date}/"),
+            'file_format': self.q("File output format", choices=self.OPT_FILE_FORMAT, default="csv"),
+            'compress': self.q("Do you want to compress the output files?", default="n", choices=self.OPT_BOOL.keys())
         }
 
     # void
