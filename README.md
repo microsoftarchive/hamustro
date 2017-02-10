@@ -1,7 +1,7 @@
 
 # ![Hamustro](docs/logo.png) - the collector of events
 
-[![Travis](https://travis-ci.org/wunderlist/hamustro.svg)](https://travis-ci.org/wunderlist/hamustro)
+[![Travis](https://travis-ci.org/wunderlist/hamustro.svg?branch=master)](https://travis-ci.org/wunderlist/hamustro)
 
 ## Overview
 
