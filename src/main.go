@@ -19,7 +19,7 @@ var verbose bool
 var isTerminating = false
 var signatureRequired bool
 var dispatcher *Dispatcher
-var Version string = "1.0rc" // Current version
+var Version string = "1.0" // Current version
 
 // Runs before the program starts
 func main() {
