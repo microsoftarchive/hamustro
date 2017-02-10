@@ -65,8 +65,6 @@ func TestEventStringConversion(t *testing.T) {
 		"UK",
 		"{parameter: test_parameter}"}
 	if !reflect.DeepEqual(e.String(), exp) {
-		t.Error(e.String())
-		t.Error(exp)
 		t.Error("Expected event's string is not matched")
 	}
 }
