@@ -1,5 +1,5 @@
 {
-  "dialect": "aqs|abs|sns|s3",
+  "dialect": "aqs|abs|sns|s3|file",
   "logfile": "",
   "max_worker_size": 5,
   "max_queue_size": 100,
@@ -37,5 +37,10 @@
     "bucket": "name of the bucket",
     "blob_path": "path/to/dir/{date}/",
     "file_format": "json|csv"
+  },
+  "file": {
+    "file_path": "",
+    "file_format": "json|csv",
+    "compress": false
   }
 }

@@ -81,7 +81,7 @@ func (c *S3Storage) GetBatchConverter() dialects.BatchConverter {
 	return c.BatchConverter
 }
 
-// Publish a single Event to SNS topic.
+// Publish a batched Events to S$.
 func (c *S3Storage) Save(msg *bytes.Buffer) error {
 	buffer, err := dialects.Compress(msg)
 	if err != nil {
@@ -91,7 +91,7 @@ func (c *S3Storage) Save(msg *bytes.Buffer) error {
 	fileBytes := buffer.Bytes()
 	params := &s3.PutObjectInput{
 		Bucket:        &c.Bucket,
-		Key:           aws.String(dialects.GetRandomPath(c.BlobPath, c.FileFormat)),
+		Key:           aws.String(dialects.GetRandomPath(c.BlobPath, c.FileFormat, true)),
 		Body:          bytes.NewReader(fileBytes),
 		ContentLength: aws.Int64(int64(fileSize)),
 		ContentType:   aws.String(http.DetectContentType(fileBytes)),
