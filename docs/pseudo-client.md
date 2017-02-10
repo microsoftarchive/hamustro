@@ -49,6 +49,12 @@ Loading information from persistent storage.
 tc.LoadCollections() // not sent events
 tc.LoadNumberPerSession() // events per session
 tc.LoadLastSyncTime() // timestamp for events sent last time
+tc.LoadUser() // tenant_id and user_id
+```
+
+Write functions to store the following information also after login:
+```cpp
+tc.SetUser(tenant_id, user_id)
 ```
 
 ## Track events
@@ -58,14 +64,13 @@ To track events you should call the following:
 ```cpp
 t.TrackEvent(
   event string, // required
-  tenant_id string,
-  user_id string,
-  params map[string]string,
+  params map[string]string
 )
 ```
 
 Please set automatically 
 - the `at` uint64 attribute for the events - it must contain an EPOCH UTC timestamp (seconds, ~10 digits),
+- `user_id` and `tenant_id` from the persistent storage
 - the `timezone` string attribute for actual timzone,
 - the `nr` integer attribute - it must contain the serial number of this event within the session all time. So, it starts counting from the first event in the session and it never defaults for that session, not even new application open,
 - the `ip` string attribute for actual IPv4 address.
@@ -77,60 +82,7 @@ It'll queue up the events within the `ClientTracker`. You should store this in a
 
 For sending messages we're using [Protobuf](https://developers.google.com/protocol-buffers/?hl=en) or [JSON](http://www.json.org). This is quicker to handle and smaller than JSON.
 
-This is the message [format](../proto/payload.proto) we're using:
-
-```protobuf
-enum Environment {
-  PRODUCTION = 0;
-  GENERAL_AVAILABILITY = 1;
-  RELEASE_TO_MARKETING = 2;
-  RELEASE_CANDIDATE = 3;
-  BETA = 4;
-  ALPHA = 5;
-  WEEKLY = 6;
-  NIGHTLY = 7;
-  STAGING = 8;
-  QUALITY_ASSURANCE = 9;
-  TESTING = 10;
-  DEVELOPMENT = 11;
-}
-
-message Payload {
-  required uint64 at = 1;
-  required string event = 2;
-  required uint32 nr = 3;
-  optional string timezone = 4;
-  optional string tenant_id = 5;
-  optional string user_id = 6;
-  optional string ip = 7;
-  optional string country = 8;
-  repeated Parameter parameters = 9;
-}
-
-message Collection {
-  required string device_id = 1;
-  required string client_id = 2;
-  required string session = 3;
-  required string system_version = 4;
-  required string product_version = 5;
-  required Environment env = 6;
-  optional string device_make = 7;
-  optional string device_model = 8;
-  optional string system = 9;
-  optional string system_language = 10;
-  optional string browser = 11;
-  optional string browser_version = 12;
-  optional string product_git_hash = 13;
-  optional string product_language = 14;
-  repeated Payload payloads = 15;
-}
-
-message Parameter {
-  required string name = 1;
-  required string value = 2;
-  required string value = 2;
-}
-```
+This is the message [format](../proto/payload.proto) we're using.
 
 You can send multiple `Payloads`, but as you can see you have to send these by session. Normally you won't have multiple sessions in your code but it can happen with bad connection and updates happening. Please sign them as 'Sent', but don't delete them before getting a response of '200'.
 
